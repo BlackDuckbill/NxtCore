@@ -1,0 +1,16 @@
+# Build Directories #
+target/
+package/
+
+# Package Files #
+dependency-reduced-pom.xml
+*.jar
+*.war
+*.ear
+*.zip
+*.tar
+*.gz
+
+# NetBeans IDE Files #
+nb*.xml
+
