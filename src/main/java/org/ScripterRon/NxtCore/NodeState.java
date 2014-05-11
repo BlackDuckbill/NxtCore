@@ -15,22 +15,22 @@
  */
 package org.ScripterRon.NxtCore;
 
-import org.json.simple.JSONObject;
+import java.math.BigInteger;
 
 /**
- * NodeState contains the current state of the local Nxt node
+ * NodeState is the response for the 'getState' request
  */
 public class NodeState {
 
     /** Parsed getState response */
-    private final JSONObject response;
+    private final PeerResponse response;
 
     /**
      * Create the node state
      *
      * @param       response        Response for getState request
      */
-    public NodeState(JSONObject response) {
+    public NodeState(PeerResponse response) {
         this.response = response;
     }
 
@@ -40,7 +40,7 @@ public class NodeState {
      * @return                      Version
      */
     public String getVersion() {
-        return (String)response.get("version");
+        return response.getString("version");
     }
 
     /**
@@ -49,7 +49,7 @@ public class NodeState {
      * @return                      Number of peers
      */
     public int getPeerCount() {
-        return ((Long)response.get("numberOfPeers")).intValue();
+        return response.getInt("numberOfPeers");
     }
 
     /**
@@ -58,7 +58,7 @@ public class NodeState {
      * @return                      Last block identifier
      */
     public String getLastBlock() {
-        return (String)response.get("lastBlock");
+        return response.getString("lastBlock");
     }
 
     /**
@@ -67,7 +67,7 @@ public class NodeState {
      * @return                      Number of blocks
      */
     public int getBlockCount() {
-        return ((Long)response.get("numberOfBlocks")).intValue();
+        return response.getInt("numberOfBlocks");
     }
 
     /**
@@ -76,7 +76,7 @@ public class NodeState {
      * @return                      Number of aliases
      */
     public long getAliasCount() {
-        return (Long)response.get("numberOfAliases");
+        return response.getLong("numberOfAliases");
     }
 
     /**
@@ -85,7 +85,7 @@ public class NodeState {
      * @return                      Number of transactions
      */
     public long getTransactionCount() {
-        return (Long)response.get("numberOfTransactions");
+        return response.getLong("numberOfTransactions");
     }
 
     /**
@@ -94,7 +94,7 @@ public class NodeState {
      * @return                      Number of orders
      */
     public long getOrderCount() {
-        return (Long)response.get("numberOfOrders");
+        return response.getLong("numberOfOrders");
     }
 
     /**
@@ -103,7 +103,7 @@ public class NodeState {
      * @return                      Number of trades
      */
     public long getTradeCount() {
-        return (Long)response.get("numberOfTrades");
+        return response.getLong("numberOfTrades");
     }
 
     /**
@@ -112,7 +112,7 @@ public class NodeState {
      * @return                      Number of votes
      */
     public long getVoteCount() {
-        return (Long)response.get("numberOfVotes");
+        return response.getLong("numberOfVotes");
     }
 
     /**
@@ -121,7 +121,7 @@ public class NodeState {
      * @return                      Number of polls
      */
     public long getPollCount() {
-        return (Long)response.get("numberOfPolls");
+        return response.getLong("numberOfPolls");
     }
 
     /**
@@ -130,7 +130,7 @@ public class NodeState {
      * @return                      Number of assets
      */
     public long getAssetCount() {
-        return (Long)response.get("numberOfAssets");
+        return response.getLong("numberOfAssets");
     }
 
     /**
@@ -139,7 +139,7 @@ public class NodeState {
      * @return                      Total effective Nxt
      */
     public long getTotalEffectiveNxt() {
-        return (Long)response.get("totalEffectiveBalanceNXT");
+        return response.getLong("totalEffectiveBalanceNXT") * Nxt.nqtAdjust;
     }
 
     /**
@@ -148,7 +148,7 @@ public class NodeState {
      * @return                      Number of accounts
      */
     public long getAccountCount() {
-        return (Long)response.get("numberOfAccounts");
+        return response.getLong("numberOfAccounts");
     }
 
     /**
@@ -156,7 +156,16 @@ public class NodeState {
      *
      * @return                      Number of unlocked accounts
      */
-    public long getUnlockedAccountCount() {
-        return (Long)response.get("numberOfUnlockedAccounts");
+    public int getUnlockedAccountCount() {
+        return response.getInt("numberOfUnlockedAccounts");
+    }
+
+    /**
+     * Return the cumulative difficulty
+     *
+     * @return                      Cumulative difficulty
+     */
+    public BigInteger getCumulativeDifficulty() {
+        return new BigInteger(response.getString("cumulativeDifficulty"));
     }
 }

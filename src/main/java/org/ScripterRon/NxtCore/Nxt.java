@@ -16,6 +16,7 @@
 package org.ScripterRon.NxtCore;
 
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -27,6 +28,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -38,22 +40,19 @@ import java.util.TimeZone;
  */
 public class Nxt {
 
-    /** JSON parser */
-    private static final JSONParser parser = new JSONParser();
-
-    /** Lock */
-    private static final Object lock = new Object();
+    /** Response container factory */
+    private static final ContainerFactory containerFactory = new ResponseFactory();
 
     /** Genesis block timestamp (November 24, 2013 12:00:00 UTC) */
-    public static final long genesisTimeStamp;
+    public static final long genesisTimestamp;
     static {
         GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         cal.set(2013, 10, 24, 12, 0, 0);
-        genesisTimeStamp = cal.getTimeInMillis()/1000;
+        genesisTimestamp = cal.getTimeInMillis()/1000;
     }
 
-    /** NQT milestone block */
-    public static final int NQT_BLOCK = 132000;
+    /** NXT <-> NQT */
+    public static final long nqtAdjust = 100000000L;
 
     /** Transaction type mapping - key is type */
     public static final Map<Integer, String> transactionTypes = new HashMap<>();
@@ -123,8 +122,8 @@ public class Nxt {
      * @throws      NxtException    Unable to issue Nxt API request
      */
     public static Account getAccount(String accountID) throws NxtException {
-        JSONObject response = issueRequest("getAccount", String.format("account=%s", accountID));
-        return new Account(accountID, response);
+        PeerResponse response = issueRequest("getAccount", String.format("account=%s", accountID));
+        return new Account(response);
     }
 
     /**
@@ -162,7 +161,7 @@ public class Nxt {
      * @throws      NxtException    Unable to issue Nxt API request
      */
     public static Block getBlock(String blockID) throws NxtException {
-        JSONObject response = issueRequest("getBlock", String.format("block=%s", blockID));
+        PeerResponse response = issueRequest("getBlock", String.format("block=%s", blockID));
         return new Block(blockID, response);
     }
 
@@ -173,7 +172,7 @@ public class Nxt {
      * @throws      NxtException    Unable to issue Nxt API request
      */
     public static NodeState getState() throws NxtException {
-        JSONObject response = issueRequest("getState", null);
+        PeerResponse response = issueRequest("getState", null);
         return new NodeState(response);
     }
 
@@ -185,8 +184,8 @@ public class Nxt {
      * @throws      NxtException    Unable to issue Nxt API request
      */
     public static Transaction getTransaction(String txID) throws NxtException {
-        JSONObject response = issueRequest("getTransaction", String.format("transaction=%s", txID));
-        return new Transaction(txID, response);
+        PeerResponse response = issueRequest("getTransaction", String.format("transaction=%s", txID));
+        return new Transaction(response);
     }
 
     /**
@@ -197,8 +196,10 @@ public class Nxt {
      * @return                      Parsed JSON response
      * @throws      NxtException    Unable to issue Nxt API request
      */
-    private static JSONObject issueRequest(String requestType, String requestParams) throws NxtException {
-        JSONObject response = null;
+    private static PeerResponse issueRequest(String requestType, String requestParams) throws NxtException {
+        PeerResponse response = null;
+        if (nodeName == null)
+            throw new NxtException("Nxt library has not been initialized");
         try {
             URL url = new URL(String.format("http://%s:%d/nxt", nodeName, nodePort));
             String request;
@@ -229,9 +230,8 @@ public class Nxt {
             // Parse the response
             //
             try (InputStreamReader in = new InputStreamReader(conn.getInputStream(), "UTF-8")) {
-                synchronized(lock) {
-                    response = (JSONObject)parser.parse(in);
-                }
+                JSONParser parser = new JSONParser();
+                response = (PeerResponse)parser.parse(in, containerFactory);
                 Long errorCode = (Long)response.get("errorCode");
                 if (errorCode != null) {
                     String errorDesc = (String)response.get("errorDescription");
@@ -247,5 +247,33 @@ public class Nxt {
             throw new NxtException(String.format("I/O error on %s request", requestType), exc);
         }
         return response;
+    }
+
+    /**
+     * JSON container factory
+     *
+     * We will create PeerResponse for JSONObject and List<Object> for JSONArray
+     */
+    private static class ResponseFactory implements ContainerFactory {
+
+        /**
+         * Create an object container
+         *
+         * @return                          PeerResponse object
+         */
+        @Override
+        public Map createObjectContainer() {
+            return new PeerResponse();
+        }
+
+        /**
+         * Create an array container
+         *
+         * @return                          List<Object>
+         */
+        @Override
+        public List<Object> creatArrayContainer() {
+            return new ArrayList<>();
+        }
     }
 }

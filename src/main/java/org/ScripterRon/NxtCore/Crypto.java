@@ -76,6 +76,23 @@ public class Crypto {
     }
 
     /**
+     * Calculate the hash of two byte arrays
+     *
+     * @param       input1          First byte array
+     * @param       input2          Second byte array
+     * @return                      The hash digest
+     */
+    public static byte[] singleDigest(byte[] input1, byte[] input2) {
+        byte[] bytes;
+        synchronized (digest) {
+            digest.reset();
+            digest.update(input1);
+            bytes = digest.digest(input2);
+        }
+        return bytes;
+    }
+
+    /**
      * Return the public key for the supplied secret phrase
      *
      * @param       secretPhrase        Account secret phrase

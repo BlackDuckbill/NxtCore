@@ -15,31 +15,24 @@
  */
 package org.ScripterRon.NxtCore;
 
-import org.json.simple.JSONObject;
-
 /**
- * Account contains the current account state retrieve from the Nxt node
+ * Account is the response for the 'getAccount' API request
  */
 public class Account {
-
-    /** NXT <-> NQT */
-    public static final long nqtAdjust = 100000000L;
+    /** Parsed getState response */
+    private final PeerResponse response;
 
     /** Account identifier */
     private final String accountId;
 
-    /** Parsed getState response */
-    private final JSONObject response;
-
     /**
      * Create the account
      *
-     * @param       accountId       Account identifier
      * @param       response        Response for getAccount request
      */
-    public Account(String accountId, JSONObject response) {
-        this.accountId = accountId;
+    public Account(PeerResponse response) {
         this.response = response;
+        this.accountId = response.getString("account");
     }
 
     /**
@@ -52,13 +45,21 @@ public class Account {
     }
 
     /**
+     * Return the account Reed-Solomon identifier
+     *
+     * @return                      Account identifier
+     */
+    public String getAccountRsId() {
+        return response.getString("accountRS");
+    }
+
+    /**
      * Return the account name
      *
      * @return                      Account name
      */
     public String getName() {
-        String name = (String)response.get("name");
-        return (name!=null ? name : "");
+        return response.getString("name");
     }
 
     /**
@@ -67,17 +68,17 @@ public class Account {
      * @return                      Account description
      */
     public String getDescription() {
-        String desc = (String)response.get("description");
-        return (desc!=null ? desc : "");
+        return response.getString("description");
     }
 
     /**
      * Return the account public key
      *
-     * @return                      Account public key
+     * @return                      Account public key.  An empty byte array will be
+     *                              returned if the public key has not been set.
      */
-    public String getPublicKey() {
-        return (String)response.get("publicKey");
+    public byte[] getPublicKey() {
+        return Utils.parseHexString(response.getString("publicKey"));
     }
 
     /**
@@ -86,25 +87,35 @@ public class Account {
      * @return                      Account balance
      */
     public long getConfirmedBalance() {
-        return Long.parseLong((String)response.get("balanceNQT"));
+        return response.getLongString("balanceNQT");
     }
 
     /**
-     * Return the effective account balance
+     * Return the effective account balance used for forging
      *
      * @return                      Effective account balance
      */
     public long getEffectiveBalance() {
-        return Long.parseLong((String)response.get("effectiveBalanceNXT")) * nqtAdjust;
+        return response.getLong("effectiveBalanceNXT") * Nxt.nqtAdjust;
     }
 
     /**
-     * Return the total account balance
+     * Return the total account balance (includes unconfirmed transactions)
      *
      * @return                      Unconfirmed account balance
      */
     public long getBalance() {
-        return Long.parseLong((String)response.get("unconfirmedBalanceNQT"));
+        return response.getLongString("unconfirmedBalanceNQT");
+    }
+
+    /**
+     * Return the forged balance.  The forged balance is included in the account
+     * balance but there are no transactions representing the forged block payments.
+     *
+     * @return                      Forged balanced
+     */
+    public long getForgedBalance() {
+        return response.getLongString("forgedBalanceNQT");
     }
 
     /**

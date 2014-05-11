@@ -15,10 +15,10 @@
  */
 package org.ScripterRon.NxtCore;
 
-import org.json.simple.JSONObject;
+import java.util.List;
 
 /**
- * Block represent a block in the Nxt block chain
+ * Block is the response for the 'getBlock' API request
  */
 public class Block {
 
@@ -26,17 +26,35 @@ public class Block {
     private final String blockId;
 
     /** Parsed getState response */
-    private final JSONObject response;
+    private final PeerResponse response;
 
     /**
      * Create the block
      *
-     * @param       blockId         Block identifier
+     * @param       blockId         Block identifier from request
      * @param       response        Response for getBlock request
      */
-    public Block(String blockId, JSONObject response) {
-        this.blockId = blockId;
+    public Block(String blockId, PeerResponse response) {
         this.response = response;
+        this.blockId = blockId;
+    }
+
+    /**
+     * Return the block version
+     *
+     * @return                      Block version
+     */
+    public int getVersion() {
+        return response.getInt("version");
+    }
+
+    /**
+     * Return the block timestamp in seconds since the epoch (January 1, 1970)
+     *
+     * @return                      Block timestamp
+     */
+    public long getTimestamp() {
+        return response.getLong("timestamp") + Nxt.genesisTimestamp;
     }
 
     /**
@@ -49,12 +67,33 @@ public class Block {
     }
 
     /**
-     * Return the block version
+     * Return the next block identifier
      *
-     * @return                      Block version
+     * @return                      Next block identifier.  An empty string is returned
+     *                              if there is no next block.
      */
-    public int getVersion() {
-        return ((Long)response.get("version")).intValue();
+    public String getNextBlockId() {
+        return response.getString("nextBlock");
+    }
+
+    /**
+     * Return the previous block identifier
+     *
+     * @return                      Previous block identifier.  An empty string is returned
+     *                              if there is no previous block.
+     */
+    public String getPreviousBlockId() {
+        return response.getString("previousBlock");
+    }
+
+    /**
+     * Return the previous block hash
+     *
+     * @return                      Previous block hash.  An empty array is returned if
+     *                              there is no previous block.
+     */
+    public byte[] getPreviousBlockHash() {
+        return Utils.parseHexString(response.getString("previousBlockHash"));
     }
 
     /**
@@ -63,7 +102,25 @@ public class Block {
      * @return                      Block height
      */
     public int getHeight() {
-        return ((Long)response.get("height")).intValue();
+        return response.getInt("height");
+    }
+
+    /**
+     * Return the payload length
+     *
+     * @return                      Payload length
+     */
+    public int getPayloadLength() {
+        return response.getInt("payloadLength");
+    }
+
+    /**
+     * Return the payload hash
+     *
+     * @return                      Payload hash
+     */
+    public byte[] getPayloadHash() {
+        return Utils.parseHexString(response.getString("payloadHash"));
     }
 
     /**
@@ -72,25 +129,79 @@ public class Block {
      * @return                      Number of transactions
      */
     public int getTransactionCount() {
-        return ((Long)response.get("numberOfTransactions")).intValue();
+        return response.getInt("numberOfTransactions");
     }
 
     /**
-     * Return the block timestamp in seconds since the epoch (January 1, 1970)
+     * Return the transaction list
      *
-     * @return                      Block timestamp
+     * @return                      Transaction list
      */
-    public long getTimeStamp() {
-        return (Long)response.get("timestamp") + Nxt.genesisTimeStamp;
+    public List<String> getTransactionList() {
+        return response.getStringList("transactions");
     }
 
     /**
-     * Return the previous block identifier
+     * Return the total amount for the transactions in the block
      *
-     * @return                      Previous block identifier
+     * @return                      Total transaction amount
      */
-    public String getPreviousBlock() {
-        return (String)response.get("previousBlock");
+    public long getTotalAmount() {
+        return response.getLong("totalAmountNQT");
+    }
+
+    /**
+     * Return the total fee for the transactions in the block
+     *
+     * @return                      Total transaction fee
+     */
+    public long getTotalFee() {
+        return response.getLong("totalFeeNQT");
+    }
+
+    /**
+     * Return the block generator identifier
+     *
+     * @return                      Block generator identifier
+     */
+    public String getGeneratorId() {
+        return response.getString("generator");
+    }
+
+    /**
+     * Return the block generator Reed-Solomon identifier
+     *
+     * @return                      Block generator identifier
+     */
+    public String getGeneratorRsId() {
+        return response.getString("generatorRS");
+    }
+
+    /**
+     * Return the block generation signature
+     *
+     * @return                      Block generation signature
+     */
+    public byte[] getGeneratorSignature() {
+        return Utils.parseHexString(response.getString("generationSignature"));
+    }
+
+    /**
+     * Return the block signature
+     *
+     * @return                      Block signature
+     */
+    public byte[] getBlockSignature() {
+        return Utils.parseHexString(response.getString("blockSignature"));
+    }
+
+    /**
+     * Return the base target for the block
+     *
+     * @return                      Base target
+     */
+    public long getBaseTarget() {
+        return response.getLong("baseTarget");
     }
 
     /**
