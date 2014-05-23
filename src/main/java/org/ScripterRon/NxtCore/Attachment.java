@@ -16,26 +16,26 @@
 package org.ScripterRon.NxtCore;
 
 /**
- * An IdentifierException is thrown for an invalid object identifier
+ * Transaction attachment
  */
-public class IdentifierException extends Exception {
+public class Attachment {
 
     /**
-     * Creates a new exception with a detail message
+     * Create a new attachment from a JSON object
      *
-     * @param       msg             Detail message
+     * @param       txType                  Transaction type
+     * @param       response                JSON attachment
      */
-    public IdentifierException(String msg) {
-        super(msg);
+    public Attachment(TransactionType txType, PeerResponse response) {
+
     }
 
     /**
-     * Creates a new exception with a detail message and cause
+     * Return the attachment byte stream
      *
-     * @param       msg             Detail message
-     * @param       t               Caught exception
+     * @return                              Byte stream
      */
-    public IdentifierException(String msg, Throwable t) {
-        super(msg, t);
+    public byte[] getBytes() {
+        return null;
     }
 }

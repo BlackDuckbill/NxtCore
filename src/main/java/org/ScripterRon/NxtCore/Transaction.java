@@ -15,12 +15,8 @@
  */
 package org.ScripterRon.NxtCore;
 
-import java.math.BigInteger;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
-import org.json.simple.JSONObject;
 
 /**
  * Transaction represents a transaction in a block
@@ -28,311 +24,419 @@ import org.json.simple.JSONObject;
 public class Transaction {
 
     /** Transaction identifier */
-    private final String txId;
+    private final long txId;
 
-    /** Parsed getState response */
-    private final PeerResponse response;
+    /** Transaction hash */
+    private final byte[] txHash;
 
-    /** Signed transaction */
-    private byte[] txBytes;
+    /** Transaction type */
+    private final TransactionType txType;
+
+    /** Sender identifier */
+    private final long senderId;
+
+    /** Sender RS identifier */
+    private final String senderRsId;
+
+    /** Sender public key */
+    private final byte[] senderPublicKey;
+
+    /** Recipient identifier */
+    private final long recipientId;
+
+    /** Recipient RS identifier */
+    private final String recipientRsId;
+
+    /** Amount */
+    private final long amount;
+
+    /** Fee */
+    private final long fee;
+
+    /** Timestamp */
+    private final int timestamp;
+
+    /** Deadline */
+    private final short deadline;
+
+    /** Referenced transaction hash */
+    private final byte[] referencedTxHash;
+
+    /** Attachment */
+    private final Attachment attachment;
+
+    /** Block identifier */
+    private final long blockId;
+
+    /** Block timestamp */
+    private final int blockTimestamp;
+
+    /** Block height */
+    private final int height;
+
+    /** Confirmation count */
+    private final int confirmations;
+
+    /** Signature hash */
+    private final byte[] signatureHash;
+
+    /** Signature */
+    private final byte[] signature;
 
     /**
-     * Create the transaction from a JSON response
+     * Create a signed transaction from the JSON response
      *
-     * @param       response        Response for getTransaction request
+     * @param       response                Response for getTransaction request
+     * @throws      IdentifierException     Invalid object identifier
+     * @throws      NumberFormatException   Invalid hex string
+     * @throws      NxtException            Invalid peer response
      */
-    public Transaction(PeerResponse response) {
-        this.txId = response.getString("transaction");
-        this.response = response;
+    public Transaction(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
+        txType = TransactionType.findTransactionType(response.getByte("type"), response.getByte("subtype"));
+        if (txType == null)
+            throw new NxtException(String.format("Transaction type %d subtype %d is not supported",
+                                                 response.getByte("type"), response.getByte("subtype")));
+        txId = response.getId("transaction");
+        txHash = response.getHexString("fullHash");
+        amount = response.getLongString("amountNQT");
+        fee = response.getLongString("feeNQT");
+        senderId = response.getId("sender");
+        senderRsId = response.getString("senderRS");
+        recipientId = response.getId("recipient");
+        recipientRsId = response.getString("recipientRS");
+        timestamp = response.getInt("timestamp");
+        deadline = response.getShort("deadline");
+        referencedTxHash = response.getHexString("referencedTransactionFullHash");
+        senderPublicKey = response.getHexString("senderPublicKey");
+        signature = response.getHexString("signature");
+        if (signature == null || signature.length != 64)
+            throw new NxtException("Transaction signature is not valid");
+        signatureHash = response.getHexString("signatureHash");
+        blockId = response.getId("block");
+        if (blockId != 0) {
+            blockTimestamp = response.getInt("blockTimestamp");
+            height = response.getInt("height");
+            confirmations = response.getInt("confirmations");
+        } else {
+            blockTimestamp = 0;
+            height = -1;
+            confirmations = -1;
+        }
+        PeerResponse attachmentResponse = (PeerResponse)response.get("attachment");
+        if (attachmentResponse != null)
+            attachment = new Attachment(txType, attachmentResponse);
+        else
+            attachment = null;
     }
 
     /**
      * Create a signed transaction using the supplied values
      *
-     * @param       type                Transaction type
-     * @param       subtype             Transaction subtype
-     * @param       recipientId         Transaction recipient
-     * @param       amount              Transaction amount
-     * @param       fee                 Transaction fee
-     * @param       deadline            Transaction deadline (minutes)
-     * @param       referencedTxHash    Referenced transaction hash or null
-     * @param       attachment          Transaction attachment or null
-     * @param       passPhrase          Sender secret phrase
-     * @throws      KeyException        Unable to perform cryptographic operation
+     * @param       txType                  Transaction type
+     * @param       recipientId             Transaction recipient
+     * @param       amount                  Transaction amount
+     * @param       fee                     Transaction fee
+     * @param       deadline                Transaction deadline (minutes)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       attachment              Transaction attachment or null
+     * @param       passPhrase              Sender secret phrase
+     * @throws      KeyException            Unable to perform cryptographic operation
      */
-    public Transaction(int type, int subtype, long recipientId, long amount, long fee,
-                                    int deadline, byte[] referencedTxHash, byte[] attachment,
+    public Transaction(TransactionType txType, long recipientId, long amount, long fee,
+                                    short deadline, byte[] referencedTxHash, Attachment attachment,
                                     String passPhrase) throws KeyException {
-        byte[] publicKey = Crypto.getPublicKey(passPhrase);
-        int timestamp = (int)((System.currentTimeMillis()+500)/1000 - Nxt.genesisTimestamp);
+        this.txType = txType;
+        this.senderPublicKey = Crypto.getPublicKey(passPhrase);
+        this.senderId = Utils.getAccountId(senderPublicKey);
+        this.senderRsId = Utils.getAccountRsId(senderId);
+        this.recipientId = recipientId;
+        this.recipientRsId = Utils.getAccountRsId(recipientId);
+        this.referencedTxHash = referencedTxHash;
+        this.amount = amount;
+        this.fee = fee;
+        this.deadline = deadline;
+        this.timestamp = (int)((System.currentTimeMillis()+500)/1000 - Nxt.genesisTimestamp);
+        this.attachment = attachment;
+        this.blockId = 0;
+        this.blockTimestamp = 0;
+        this.height = -1;
+        this.confirmations = -1;
         //
-        // Create the unsigned transaction for an ordinary payment
+        // Sign the transaction
         //
+        byte[] txBytes = getBytes(true);
+        this.signature = Crypto.sign(txBytes, passPhrase);
+        this.signatureHash = Crypto.singleDigest(signature);
+        //
+        // Generate the transaction identifier
+        //
+        this.txHash = Crypto.singleDigest(txBytes, signatureHash);
+        this.txId = Utils.fullHashToId(txHash);
+    }
+
+    /**
+     * Return the transaction bytes
+     *
+     * @param       zeroSignature           TRUE to zero the signature bytes
+     * @return                              Transaction bytes or null
+     */
+    public final byte[] getBytes(boolean zeroSignature) {
         int baseLength = 160;
-        int txLength = (attachment!=null ? baseLength+attachment.length : baseLength);
-        txBytes = new byte[txLength];
+        int txLength;
+        byte[] attachmentBytes;
+        if (attachment != null) {
+            attachmentBytes = attachment.getBytes();
+            txLength = baseLength + attachmentBytes.length;
+        } else {
+            attachmentBytes = null;
+            txLength = baseLength;
+        }
+        byte[] txBytes = new byte[txLength];
         ByteBuffer txBuffer = ByteBuffer.wrap(txBytes);
         txBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        txBuffer.put((byte)type);
-        txBuffer.put((byte)subtype);
+        txBuffer.put((txType.getType()));
+        txBuffer.put(txType.getSubtype());
         txBuffer.putInt(timestamp);
-        txBuffer.putShort((short)deadline);
-        txBuffer.put(publicKey);
+        txBuffer.putShort(deadline);
+        txBuffer.put(senderPublicKey);
         txBuffer.putLong(recipientId);
         txBuffer.putLong(amount);
         txBuffer.putLong(fee);
         if (referencedTxHash != null)
             txBuffer.put(referencedTxHash);
-        if (attachment != null)
-            System.arraycopy(attachment, 0, txBytes, baseLength, attachment.length);
-        //
-        // Create the signature for the transaction
-        //
-        byte[] signature = Crypto.sign(txBytes, passPhrase);
-        byte[] signatureHash = Crypto.singleDigest(signature);
-        //
-        // Generate the transaction identifier
-        //
-        byte[] txHash = Crypto.singleDigest(txBytes, signatureHash);
-        BigInteger bigId = new BigInteger(1, new byte[] {txHash[7], txHash[6], txHash[5], txHash[4],
-                                                         txHash[3], txHash[2], txHash[1], txHash[0]});
-        txId = bigId.toString();
-        String fullHash = Utils.toHexString(txHash);
-        //
-        // Create the signed transaction
-        //
-        System.arraycopy(signature, 0, txBytes, baseLength-64, 64);
-        //
-        // Create the JSON object
-        //
-        response = new PeerResponse();
-        response.put("type", type);
-        response.put("subtype", subtype);
-        response.put("timestamp", timestamp-Nxt.genesisTimestamp);
-        response.put("deadline", deadline);
-        response.put("senderPublicKey", Utils.toHexString(publicKey));
-        response.put("sender", Utils.getAccountId(publicKey));
-        response.put("recipient", Utils.idToString(recipientId));
-        response.put("amountNQT", String.valueOf(amount));
-        response.put("feeNQT", String.valueOf(fee));
-        response.put("signature", Utils.toHexString(signature));
-        response.put("signatureHash", Utils.toHexString(signatureHash));
-        response.put("fullHash", fullHash);
-        response.put("transaction", txId);
-    }
-
-    /**
-     * Return the transaction bytes.  The transaction bytes are not available if the
-     * transaction was created from the response to a 'getTransaction' request.
-     *
-     * @return                      Signed transaction bytes or null
-     */
-    public byte[] getBytes() {
+        if (!zeroSignature)
+            System.arraycopy(signature, 0, txBytes, baseLength-64, 64);
+        if (attachmentBytes != null)
+            System.arraycopy(attachmentBytes, 0, txBytes, baseLength, attachmentBytes.length);
         return txBytes;
-    }
-
-    /**
-     * Return the transaction identifier
-     *
-     * @return                      Transaction identifier
-     */
-    public String getTransactionId() {
-        return txId;
-    }
-
-    /**
-     * Return the transaction hash
-     *
-     * @return                      Transaction hash
-     */
-    public byte[] getTransactionHash() {
-        return Utils.parseHexString(response.getString("fullHash"));
-    }
-
-    /**
-     * Return the identifier of the block containing the transaction
-     *
-     * @return                      Block identifier
-     */
-    public String getBlockId() {
-        return response.getString("block");
-    }
-
-    /**
-     * Return the block timestamp in seconds since the epoch (Jan 1, 1970)
-     *
-     * @return                      Block timestamp
-     */
-    public long getBlockTimestamp() {
-        return response.getLong("blockTimestamp") + Nxt.genesisTimestamp;
-    }
-
-    /**
-     * Return the transaction height
-     *
-     * @return                      Transaction height
-     */
-    public int getHeight() {
-        return response.getInt("height");
     }
 
     /**
      * Return the transaction type
      *
-     * @return                      Transaction type
+     * @return                              Transaction type
      */
-    public int getType() {
-        return response.getInt("type");
+    public TransactionType getType() {
+        return txType;
     }
 
     /**
-     * Return the transaction subtype
+     * Return the transaction identifier
      *
-     * @return                      Transaction subtype
+     * @return                              Transaction identifier
      */
-    public int getSubtype() {
-        return response.getInt("subtype");
+    public long getTransactionId() {
+        return txId;
     }
 
     /**
-     * Return the transaction amount
+     * Return the transaction identifier as a string
      *
-     * @return                      Transaction amount
+     * @return                              Transaction identifier string
      */
-    public long getAmount() {
-        return response.getLongString("amountNQT");
+    public String getTransactionIdString() {
+        return Utils.idToString(txId);
     }
 
     /**
-     * Return the transaction fee
+     * Return the transaction hash
      *
-     * @return                      Transaction fee
+     * @return                              Transaction hash
      */
-    public long getFee() {
-        return response.getLongString("feeNQT");
-    }
-
-    /**
-     * Return the transaction timestamp in seconds since the epoch (January 1, 1970)
-     *
-     * @return                      Transaction timestamp
-     */
-    public long getTimeStamp() {
-        return response.getLong("timestamp") + Nxt.genesisTimestamp;
-    }
-
-    /**
-     * Return the transaction deadline
-     *
-     * @return                      Transaction deadline in minutes
-     */
-    public int getDeadline() {
-        return response.getInt("deadline");
-    }
-
-    /**
-     * Return the number of confirmations
-     *
-     * @return                      Confirmation count or -1 if unconfirmed
-     */
-    public int getConfirmations() {
-        int count = -1;
-        Long confirmations = (Long)response.get("confirmations");
-        if (confirmations != null)
-            count = confirmations.intValue();
-        return count;
+    public byte[] getTransactionHash() {
+        return txHash;
     }
 
     /**
      * Return the sender account identifier
      *
-     * @return                      Sender account identifier
+     * @return                              Sender account identifier
      */
-    public String getSenderId() {
-        return response.getString("sender");
+    public long getSenderId() {
+        return senderId;
+    }
+
+    /**
+     * Return the sender account identifier string
+     *
+     * @return                              Sender account identifier string
+     */
+    public String getSenderIdString() {
+        return Utils.idToString(senderId);
     }
 
     /**
      * Return the sender Reed-Solomon account identifier
      *
-     * @return                      Sender account identifier
+     * @return                              Sender Reed-Solomon account identifier
      */
+
     public String getSenderRsId() {
-        return response.getString("senderRS");
+        return senderRsId;
     }
 
     /**
      * Return the sender public key
      *
-     * @return                      Sender public key
+     * @return                              Sender public key
      */
     public byte[] getSenderPublicKey() {
-        return Utils.parseHexString(response.getString("senderPublicKey"));
+        return senderPublicKey;
     }
 
     /**
      * Return the recipient account identifier
      *
-     * @return                      Recipient account identifier
+     * @return                              Recipient account identifier
      */
-    public String getRecipientId() {
-        return response.getString("recipient");
+    public long getRecipientId() {
+        return recipientId;
+    }
+
+    /**
+     * Return the recipient account identifier string
+     *
+     * @return                              Recipient account identifier string
+     */
+    public String getRecipientIdString() {
+        return Utils.idToString(recipientId);
     }
 
     /**
      * Return the recipient Reed-Solomon account identifier
      *
-     * @return                      Recipient account identifier
+     * @return                              Recipient account identifier
      */
     public String getRecipientRsId() {
-        return response.getString("recipientRS");
+        return recipientRsId;
+    }
+
+    /**
+     * Return the transaction amount
+     *
+     * @return                              Transaction amount
+     */
+    public long getAmount() {
+        return amount;
+    }
+
+    /**
+     * Return the transaction fee
+     *
+     * @return                              Transaction fee
+     */
+    public long getFee() {
+        return fee;
+    }
+
+    /**
+     * Return the transaction timestamp in seconds since the epoch (January 1, 1970)
+     *
+     * @return                              Transaction timestamp
+     */
+    public long getTimeStamp() {
+        return timestamp + Nxt.genesisTimestamp;
+    }
+
+    /**
+     * Return the transaction deadline
+     *
+     * @return                              Transaction deadline in minutes
+     */
+    public short getDeadline() {
+        return deadline;
     }
 
     /**
      * Return the transaction signature
      *
-     * @return                      Transaction signature
+     * @return                              Transaction signature
      */
     public byte[] getSignature() {
-        return Utils.parseHexString(response.getString("signature"));
+        return signature;
     }
 
     /**
      * Return the transaction signature hash
      *
-     * @return                      Signature hash
+     * @return                              Signature hash
      */
     public byte[] getSignatureHash() {
-        return Utils.parseHexString(response.getString("signatureHash"));
+        return signatureHash;
+    }
+
+    /**
+     * Return the referenced transaction hash
+     *
+     * @return                              Referenced transaction hash or null
+     */
+    public byte[] getReferencedTxHash() {
+        return referencedTxHash;
     }
 
     /**
      * Return the transaction attachment
      *
-     * @return                      Transaction attachment or null if no attachment
+     * @return                              Transaction attachment or null if no attachment
      */
-    public JSONObject getAttachment() {
-        return (JSONObject)response.get("attachment");
+    public Attachment getAttachment() {
+        return attachment;
+    }
+
+    /**
+     * Return the block identifier
+     *
+     * @return                              Block identifier or 0 if not in a block
+     */
+    public long getBlockId() {
+        return blockId;
+    }
+
+    /**
+     * Return the block timestamp in seconds since the epoch (Jan 1, 1970)
+     *
+     * @return                              Block timestamp or 0 if not in a block
+     */
+    public long getBlockTimestamp() {
+        return (blockId!=0 ? blockTimestamp+Nxt.genesisTimestamp : 0);
+    }
+
+    /**
+     * Return the block height
+     *
+     * @return                              Block height or -1 if not in a block
+     */
+    public int getHeight() {
+        return height;
+    }
+
+    /**
+     * Return the number of confirmations
+     *
+     * @return                              Confirmation count or -1 if unconfirmed
+     */
+    public int getConfirmations() {
+        return confirmations;
     }
 
     /**
      * Return the transaction hash code
      *
-     * @return                      Transaction hash code
+     * @return                              Transaction hash code
      */
     @Override
     public int hashCode() {
-        return txId.hashCode();
+        return (int)txId;
     }
 
     /**
      * Compares two transactions
      *
-     * @param       obj             Transaction to compare
-     * @return                      TRUE if the transaction is equal to this transaction
+     * @param       obj                     Transaction to compare
+     * @return                              TRUE if the transaction is equal to this transaction
      */
     @Override
     public boolean equals(Object obj) {
-        return (obj != null && (obj instanceof Transaction) && txId.equals(((Transaction)obj).txId));
+        return (obj != null && (obj instanceof Transaction) && txId==((Transaction)obj).txId);
     }
 }

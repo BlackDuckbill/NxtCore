@@ -47,6 +47,28 @@ public class PeerResponse extends JSONObject {
     }
 
     /**
+     * Return a byte value
+     *
+     * @param       key                     JSON key
+     * @return                              Byte value (0 if key not found)
+     */
+    public byte getByte(String key) {
+        Object value = get(key);
+        return (value!=null && (value instanceof Long) ? (byte)((Long)value).intValue() : 0);
+    }
+
+    /**
+     * Return a short value
+     *
+     * @param       key                     JSON key
+     * @return                              Short value (0 if key not found)
+     */
+    public short getShort(String key) {
+        Object value = get(key);
+        return (value!=null && (value instanceof Long) ? (short)((Long)value).intValue() : 0);
+    }
+
+    /**
      * Return an integer value
      *
      * @param       key                     JSON key
@@ -73,11 +95,24 @@ public class PeerResponse extends JSONObject {
      *
      * @param       key                     JSON key
      * @return                              Long value (0 if key not found)
+     * @throws      NumberFormatException   Invalid decimal string
      */
-    public long getLongString(String key) {
+    public long getLongString(String key) throws NumberFormatException {
         Object value = get(key);
         return (value!=null && (value instanceof String) && ((String)value).length()>0 ?
                 Long.parseLong((String)value) : 0);
+    }
+
+    /**
+     * Return an object identifier
+     *
+     * @param       key                     JSON key
+     * @return                              Object identifier (0 if key not found)
+     * @throws      IdentifierException     Invalid object identifier
+     */
+    public long getId(String key) throws IdentifierException {
+        Object value = get(key);
+        return (value!=null && (value instanceof String) ? Utils.stringToId((String)value) : 0);
     }
 
     /**
@@ -89,6 +124,18 @@ public class PeerResponse extends JSONObject {
     public String getString(String key) {
         Object value = get(key);
         return (value!=null && (value instanceof String) ? (String)value : "");
+    }
+
+    /**
+     * Return a hexadecimal byte value
+     *
+     * @param       key                     JSON key
+     * @return                              Hexadecimal byte array (null if key not found)
+     * @throws      NumberFormatException   Invalid hexadecimal string
+     */
+    public byte[] getHexString(String key) {
+        Object value = get(key);
+        return (value!=null && (value instanceof String) ? Utils.parseHexString((String)value) : null);
     }
 
     /**

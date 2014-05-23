@@ -17,7 +17,7 @@ package org.ScripterRon.NxtCore;
 
 /**
  * A NxtException is thrown when an error occurs while processing a Nxt
- * API request
+ * API request or response
  */
 public class NxtException extends Exception {
 

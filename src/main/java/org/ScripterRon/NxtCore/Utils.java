@@ -40,9 +40,19 @@ public class Utils {
      * @param       publicKey       Public key
      * @return                      Account identifier
      */
-    public static String getAccountId(byte[] publicKey) {
+    public static long getAccountId(byte[] publicKey) {
         byte[] publicKeyHash = Crypto.singleDigest(publicKey);
-        return idToString(fullHashToId(publicKeyHash));
+        return fullHashToId(publicKeyHash);
+    }
+
+    /**
+     * Get the Reed-Solomon encode account identifier
+     *
+     * @param       accountId       Account identifier
+     * @return                      Encoded account identifier
+     */
+    public static String getAccountRsId(long accountId) {
+        return "NXT-" + ReedSolomon.encode(accountId);
     }
 
     /**

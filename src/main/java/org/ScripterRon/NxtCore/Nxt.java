@@ -179,13 +179,19 @@ public class Nxt {
     /**
      * Get a transaction
      *
-     * @param       txID            Transaction identifier
-     * @return                      Transaction
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       txID                    Transaction identifier
+     * @return                              Transaction
+     * @throws      NxtException            Unable to issue Nxt API request
      */
     public static Transaction getTransaction(String txID) throws NxtException {
+        Transaction tx;
         PeerResponse response = issueRequest("getTransaction", String.format("transaction=%s", txID));
-        return new Transaction(response);
+        try {
+            tx = new Transaction(response);
+        } catch (IdentifierException | NumberFormatException exc) {
+            throw new NxtException("Unable to create transaction from peer response", exc);
+        }
+        return tx;
     }
 
     /**
