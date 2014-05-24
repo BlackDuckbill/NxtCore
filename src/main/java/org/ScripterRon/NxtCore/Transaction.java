@@ -124,7 +124,7 @@ public class Transaction {
         }
         PeerResponse attachmentResponse = (PeerResponse)response.get("attachment");
         if (attachmentResponse != null)
-            attachment = new Attachment(txType, attachmentResponse);
+            attachment = txType.loadAttachment(attachmentResponse);
         else
             attachment = null;
     }

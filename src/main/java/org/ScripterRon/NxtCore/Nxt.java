@@ -217,8 +217,7 @@ public class Nxt {
         Block block;
         try {
             PeerResponse response = issueRequest("getBlock", "block="+Utils.idToString(blockId));
-            byte[] publicKey = getAccountPublicKey(response.getId("generator"));
-            block = new Block(response, publicKey);
+            block = new Block(response);
             if (block.getBlockId() != blockId)
                 throw new NxtException("Calculated block identifier incorrect for block "+Utils.idToString(blockId));
         } catch (IdentifierException | NumberFormatException exc) {

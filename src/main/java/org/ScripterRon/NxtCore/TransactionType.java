@@ -62,9 +62,9 @@ public abstract class TransactionType {
     /**
      * Return the TransactionType for the specified type and subtype values
      *
-     * @param       type                Transaction type
-     * @param       subtype             Transaction subtype
-     * @return                          TransactionType or null if invalid type/subtype
+     * @param       type                    Transaction type
+     * @param       subtype                 Transaction subtype
+     * @return                              TransactionType or null if invalid type/subtype
      */
     public static final TransactionType findTransactionType(byte type, byte subtype) {
         TransactionType txType = null;
@@ -162,23 +162,37 @@ public abstract class TransactionType {
     /**
      * Return the transaction type
      *
-     * @return                          Transaction type
+     * @return                              Transaction type
      */
     public abstract byte getType();
 
     /**
      * Return the transaction subtype
      *
-     * @return                          Transaction subtype
+     * @return                              Transaction subtype
      */
     public abstract byte getSubtype();
 
     /**
      * Return the transaction description
      *
-     * @return                          Transaction description
+     * @return                              Transaction description
      */
     public abstract String getDescription();
+
+    /**
+     * Create an attachment from the JSON response
+     *
+     * @param       response                JSON response
+     * @return                              Attachment or null if the transaction type does not have an attachment
+     * @throws      IdentifierException     Invalid object identifier
+     * @throws      NumberFormatException   Invalid numeric string
+     * @throws      NxtException            Invalid peer response
+     */
+    public Attachment loadAttachment(PeerResponse response)
+                                            throws IdentifierException, NumberFormatException, NxtException {
+        return null;
+    }
 
     /**
      * Payment transactions
@@ -254,6 +268,21 @@ public abstract class TransactionType {
             @Override
             public String getDescription() {
                 return "Arbitrary message";
+            }
+
+            /**
+             * Create an attachment from the JSON response
+             *
+             * @param       response                JSON response
+             * @return                              Attachment
+             * @throws      IdentifierException     Invalid object identifier
+             * @throws      NumberFormatException   Invalid numeric string
+             * @throws      NxtException            Invalid peer response
+             */
+            @Override
+            public Attachment loadAttachment(PeerResponse response)
+                                        throws IdentifierException, NumberFormatException, NxtException {
+                return new ArbitraryMessage(response);
             }
         };
 

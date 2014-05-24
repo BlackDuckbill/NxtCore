@@ -18,24 +18,12 @@ package org.ScripterRon.NxtCore;
 /**
  * Transaction attachment
  */
-public class Attachment {
-
-    /**
-     * Create a new attachment from a JSON object
-     *
-     * @param       txType                  Transaction type
-     * @param       response                JSON attachment
-     */
-    public Attachment(TransactionType txType, PeerResponse response) {
-
-    }
+public interface Attachment {
 
     /**
      * Return the attachment byte stream
      *
      * @return                              Byte stream
      */
-    public byte[] getBytes() {
-        return null;
-    }
+    public byte[] getBytes();
 }

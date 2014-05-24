@@ -22,6 +22,9 @@ import java.math.BigInteger;
  */
 public class ChainState {
 
+    /** Application name */
+    private final String application;
+
     /** Application version */
     private final String version;
 
@@ -54,6 +57,7 @@ public class ChainState {
      * @throws      NumberFormatException   Invalid numeric string
      */
     public ChainState(PeerResponse response) throws IdentifierException, NumberFormatException {
+        this.application = response.getString("application");
         this.version = response.getString("version");
         this.lastBlockId = response.getId("lastBlock");
         this.lastFeeder = response.getString("lastBlockchainFeeder");
@@ -65,7 +69,16 @@ public class ChainState {
     }
 
     /**
-     * Returns the Nxt version
+     * Return the application name
+     *
+     * @return                      Name
+     */
+    public String getApplication() {
+        return application;
+    }
+
+    /**
+     * Returns the application version
      *
      * @return                      Version
      */

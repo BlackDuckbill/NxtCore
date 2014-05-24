@@ -46,7 +46,7 @@ public class Utils {
     }
 
     /**
-     * Get the Reed-Solomon account identifier string
+     * Get the Reed-Solomon string for an account identifier
      *
      * @param       accountId               Account identifier
      * @return                              Reed-Solomon account identifier string
@@ -63,8 +63,8 @@ public class Utils {
      * @throws      IdentifierException     Invalid account identifier string
      */
     public static long parseAccountRsId(String accountRsId) throws IdentifierException {
-        if (!accountRsId.startsWith("NXT_"))
-            throw new IdentifierException("Invalid Nxt Reed-Solomon account identifier");
+        if (!accountRsId.startsWith("NXT-"))
+            throw new IdentifierException("Invalid Reed-Solomon Nxt account identifier");
         return ReedSolomon.decode(accountRsId.substring(4));
     }
 

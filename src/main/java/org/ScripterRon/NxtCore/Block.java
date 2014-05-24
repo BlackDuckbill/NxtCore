@@ -89,13 +89,11 @@ public class Block {
      * Create the block from the JSON response for 'getBlock'
      *
      * @param       response                Response for getBlock request
-     * @param       generatorPublicKey      Generator public key
      * @throws      IdentifierException     Invalid object identifier
      * @throws      NumberFormatException   Invalid numeric string
      * @throws      NxtException            Invalid block format
      */
-    public Block(PeerResponse response, byte[] generatorPublicKey)
-                                throws IdentifierException, NumberFormatException, NxtException {
+    public Block(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
         this.version = response.getInt("version");
         if (version > 3)
             throw new NxtException(String.format("Block version %d is not supported", version));
@@ -107,7 +105,7 @@ public class Block {
         this.timestamp = response.getInt("timestamp");
         this.generatorId = response.getId("generator");
         this.generatorRsId = response.getString("generatorRS");
-        this.generatorPublicKey = generatorPublicKey;
+        this.generatorPublicKey = response.getHexString("generatorPublicKey");
         this.generationSignature = response.getHexString("generationSignature");
         this.blockSignature = response.getHexString("blockSignature");
         this.payloadLength = response.getInt("payloadLength");
