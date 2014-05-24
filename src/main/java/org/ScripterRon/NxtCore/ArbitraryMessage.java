@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Arbitrary Message attachment
+ * Arbitrary Message attachment for TransactionType.Messaging.ARBITRARY_MESSAGE
  */
 public class ArbitraryMessage implements Attachment {
 
@@ -63,5 +63,14 @@ public class ArbitraryMessage implements Attachment {
         buf.putInt(message.length);
         buf.put(message);
         return bytes;
+    }
+
+    /**
+     * Return the message
+     *
+     * @return                              Message
+     */
+    public byte[] getMessage() {
+        return message;
     }
 }
