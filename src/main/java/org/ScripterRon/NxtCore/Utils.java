@@ -37,8 +37,8 @@ public class Utils {
     /**
      * Get the account identifier associated with a public key
      *
-     * @param       publicKey       Public key
-     * @return                      Account identifier
+     * @param       publicKey               Public key
+     * @return                              Account identifier
      */
     public static long getAccountId(byte[] publicKey) {
         byte[] publicKeyHash = Crypto.singleDigest(publicKey);
@@ -46,20 +46,33 @@ public class Utils {
     }
 
     /**
-     * Get the Reed-Solomon encode account identifier
+     * Get the Reed-Solomon account identifier string
      *
-     * @param       accountId       Account identifier
-     * @return                      Encoded account identifier
+     * @param       accountId               Account identifier
+     * @return                              Reed-Solomon account identifier string
      */
     public static String getAccountRsId(long accountId) {
         return "NXT-" + ReedSolomon.encode(accountId);
     }
 
     /**
-     * Convert a full hash to an identifier using the first 8 bytes of the hash
+     * Parse the Reed-Solomon account identifier string and return the account identifier
      *
-     * @param       hash            Full hash
-     * @return                      Identifier
+     * @param       accountRsId             Reed-Solomon account string
+     * @return                              Account identifier
+     * @throws      IdentifierException     Invalid account identifier string
+     */
+    public static long parseAccountRsId(String accountRsId) throws IdentifierException {
+        if (!accountRsId.startsWith("NXT_"))
+            throw new IdentifierException("Invalid Nxt Reed-Solomon account identifier");
+        return ReedSolomon.decode(accountRsId.substring(4));
+    }
+
+    /**
+     * Convert a full hash to an object identifier using the first 8 bytes of the hash
+     *
+     * @param       hash                    Full hash
+     * @return                              Object identifier
      */
     public static long fullHashToId(byte[] hash) {
         if (hash == null || hash.length < 8)
@@ -73,8 +86,8 @@ public class Utils {
     /**
      * Convert an object identifier to a string
      *
-     * @param       objectId        Object identifier
-     * @return                      Identifier string
+     * @param       objectId                Object identifier
+     * @return                              Identifier string
      */
     public static String idToString(long objectId) {
         if (objectId >= 0)
@@ -140,8 +153,8 @@ public class Utils {
     /**
      * Encode an integer as a variable-length byte stream
      *
-     * @param       value           Value to encode
-     * @return                      Encoded byte stream
+     * @param       value                   Value to encode
+     * @return                              Encoded byte stream
      */
     public static byte[] encodeInteger(int value) {
         byte[] bytes;
@@ -161,10 +174,10 @@ public class Utils {
     /**
      * Decode a variable-length encoded integer
      *
-     * @param       inStream        Input stream
-     * @return                      Decoded length
-     * @throws      EOFException    End-of-data while processing serialized length
-     * @throws      IOException     Unable to read input stream
+     * @param       inStream                Input stream
+     * @return                              Decoded length
+     * @throws      EOFException            End-of-data while processing serialized length
+     * @throws      IOException             Unable to read input stream
      */
     public static int decodeInteger(InputStream inStream) throws EOFException, IOException {
         int value;

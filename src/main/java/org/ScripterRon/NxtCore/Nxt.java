@@ -15,7 +15,6 @@
  */
 package org.ScripterRon.NxtCore;
 
-import org.json.simple.JSONObject;
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -30,7 +29,6 @@ import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -44,21 +42,15 @@ public class Nxt {
     private static final ContainerFactory containerFactory = new ResponseFactory();
 
     /** Genesis block timestamp (November 24, 2013 12:00:00 UTC) */
-    public static final long genesisTimestamp;
+    public static final long GENESIS_TIMESTAMP;
     static {
         GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         cal.set(2013, 10, 24, 12, 0, 0);
-        genesisTimestamp = cal.getTimeInMillis()/1000;
+        GENESIS_TIMESTAMP = cal.getTimeInMillis()/1000;
     }
 
     /** NXT <-> NQT */
-    public static final long nqtAdjust = 100000000L;
-
-    /** Transaction type mapping - key is type */
-    public static final Map<Integer, String> transactionTypes = new HashMap<>();
-
-    /** Transaction subtype mapping - key is type*100+subtype */
-    public static final Map<Integer, String> transactionSubtypes = new HashMap<>();
+    public static final long NQT_ADJUST = 100000000L;
 
     /** API reason codes */
     public static final int INCORRECT_REQUEST = 1;
@@ -76,118 +68,213 @@ public class Nxt {
     private static int nodePort;
 
     /**
-     * Initialize the Nxt constants
+     * Initialize the Nxt core library
      *
-     * @param       hostName        Host name or IP address of the node server
-     * @param       apiPort         Port for the node server
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       hostName                Host name or IP address of the node server
+     * @param       apiPort                 Port for the node server
      */
-    public static void initConstants(String hostName, int apiPort) throws NxtException {
+    public static void init(String hostName, int apiPort) {
         nodeName = hostName;
         nodePort = apiPort;
-        JSONObject response = issueRequest("getConstants", null);
-        //
-        // Initialize the transaction type/subtype mapping
-        //
-        List<JSONObject> txTypes = (List<JSONObject>)response.get("transactionTypes");
-        for (JSONObject txType : txTypes) {
-            int type = ((Long)txType.get("value")).intValue();
-            transactionTypes.put(type, (String)txType.get("description"));
-            List<JSONObject> txSubtypes = (List<JSONObject>)txType.get("subtypes");
-            for (JSONObject txSubtype : txSubtypes) {
-                int subtype = ((Long)txSubtype.get("value")).intValue();
-                transactionSubtypes.put(type*100+subtype, (String)txSubtype.get("description"));
-            }
-        }
     }
 
     /**
      * Broadcast a signed transaction
      *
-     * @param       txBytes         Signed transaction bytes
-     * @return                      Transaction identifier
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       txBytes                 Signed transaction bytes
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static String broadcastTransaction(String txBytes) throws NxtException {
-        JSONObject response = issueRequest("broadcastTransaction",
-                                           String.format("transactionBytes=%s", txBytes));
-        return (String)response.get("transaction");
+    public static long broadcastTransaction(byte[] txBytes) throws NxtException {
+        long txId;
+        try {
+            PeerResponse response = issueRequest("broadcastTransaction", "transactionBytes="+Utils.toHexString(txBytes));
+            txId = response.getId("transaction");
+        } catch (IdentifierException exc) {
+            throw new NxtException("Invalid transaction identifier returned for 'broadcastTransaction'", exc);
+        }
+        return txId;
     }
 
     /**
      * Get an account
      *
-     * @param       accountID       Account identifier
-     * @return                      Account
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       accountId               Account identifier
+     * @return                              Account
+     * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static Account getAccount(String accountID) throws NxtException {
-        PeerResponse response = issueRequest("getAccount", String.format("account=%s", accountID));
-        return new Account(response);
+    public static Account getAccount(long accountId) throws NxtException {
+        Account account;
+        try {
+            PeerResponse response = issueRequest("getAccount", "account="+Utils.idToString(accountId));
+            account = new Account(response);
+        } catch (IdentifierException | NumberFormatException exc) {
+            throw new NxtException("Invalid account data returned for 'getAccount'", exc);
+        }
+        return account;
     }
 
     /**
-     * Get the account block identifiers
+     * Get the public key for an account
      *
-     * @param       accountID       Account identifier
-     * @return                      List of account blocks
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       accountId               Account identifier
+     * @return                              Public key or null if the public key has not been set
+     * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<String> getAccountBlocks(String accountID) throws NxtException {
-        JSONObject response = issueRequest("getAccountBlockIds", String.format("account=%s", accountID));
-        return (List<String>)response.get("blockIds");
+    public static byte[] getAccountPublicKey(long accountId) throws NxtException {
+        byte[] publicKey;
+        try {
+            PeerResponse response = issueRequest("getAccountPublicKey", "account="+Utils.idToString(accountId));
+            publicKey = response.getHexString("publicKey");
+        } catch (NumberFormatException exc) {
+            throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
+        }
+        return publicKey;
+    }
+
+    /**
+     * Get the account block identifiers (blocks forged by the account)
+     *
+     * @param       accountId               Account identifier
+     * @return                              List of account blocks
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getAccountBlocks(long accountId) throws NxtException {
+        List<Long> blockList;
+        try {
+            PeerResponse response = issueRequest("getAccountBlockIds", "account="+Utils.idToString(accountId));
+            blockList = response.getIdList("blockIds");
+        } catch (IdentifierException exc) {
+            throw new NxtException("Invalid block identifier returned for 'getAccountBlockIds'", exc);
+        }
+        return blockList;
+    }
+
+    /**
+     * Get the confirmed account transaction identifiers
+     *
+     * @param       accountId               Account identifier
+     * @return                              List of transaction identifiers
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getConfirmedAccountTransactions(long accountId) throws NxtException {
+        List<Long> txList;
+        try {
+            PeerResponse response = issueRequest("getAccountTransactionIds", "account="+Utils.idToString(accountId));
+            txList = response.getIdList("transactionIds");
+        } catch (IdentifierException exc) {
+            throw new NxtException("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
+        }
+        return txList;
+    }
+
+    /**
+     * Get the unconfirmed account transaction identifiers
+     *
+     * @param       accountId               Account identifier
+     * @return                              List of transaction identifiers
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getUnconfirmedAccountTransactions(long accountId) throws NxtException {
+        List<Long> txList;
+        try {
+            PeerResponse response = issueRequest("getUnconfirmedTransactionIds", "account="+Utils.idToString(accountId));
+            txList = response.getIdList("unconfirmedTransactionIds");
+        } catch (IdentifierException exc) {
+            throw new NxtException("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
+        }
+        return txList;
     }
 
     /**
      * Get the account transaction identifiers (confirmed and unconfirmed)
      *
-     * @param       accountID       Account identifier
-     * @return                      List of account transactions
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       accountId               Account identifier
+     * @return                              List of account transactions
+     * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<String> getAccountTransactions(String accountID) throws NxtException {
-        JSONObject response = issueRequest("getAccountTransactionIds", String.format("account=%s", accountID));
-        List<String> txList = (List<String>)response.get("transactionIds");
-        response = issueRequest("getUnconfirmedTransactionIds", String.format("account=%s", accountID));
-        txList.addAll((List<String>)response.get("unconfirmedTransactionIds"));
+    public static List<Long> getAccountTransactions(long accountId) throws NxtException {
+        List<Long> txList;
+        List<Long> confList = getConfirmedAccountTransactions(accountId);
+        List<Long> unconfList = getUnconfirmedAccountTransactions(accountId);
+        int size = confList.size() + unconfList.size();
+        if (size == 0)
+            return confList;
+        txList = new ArrayList<>(confList.size()+unconfList.size());
+        txList.addAll(confList);
+        txList.addAll(unconfList);
         return txList;
     }
 
     /**
      * Get a block
      *
-     * @param       blockID         Block identifier
-     * @return                      Block
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       blockId                 Block identifier
+     * @return                              Block
+     * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static Block getBlock(String blockID) throws NxtException {
-        PeerResponse response = issueRequest("getBlock", String.format("block=%s", blockID));
-        return new Block(blockID, response);
+    public static Block getBlock(long blockId) throws NxtException {
+        Block block;
+        try {
+            PeerResponse response = issueRequest("getBlock", "block="+Utils.idToString(blockId));
+            byte[] publicKey = getAccountPublicKey(response.getId("generator"));
+            block = new Block(response, publicKey);
+            if (block.getBlockId() != blockId)
+                throw new NxtException("Calculated block identifier incorrect for block "+Utils.idToString(blockId));
+        } catch (IdentifierException | NumberFormatException exc) {
+            throw new NxtException("Invalid block data returned for 'getBlock'", exc);
+        }
+        return block;
     }
 
     /**
      * Get the current node state
      *
-     * @return                      Node state
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @return                              Node state
+     * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static NodeState getState() throws NxtException {
-        PeerResponse response = issueRequest("getState", null);
-        return new NodeState(response);
+    public static NodeState getNodeState() throws NxtException {
+        NodeState nodeState;
+        try {
+            PeerResponse response = issueRequest("getState", null);
+            nodeState = new NodeState(response);
+        } catch (IdentifierException | NumberFormatException exc) {
+            throw new NxtException("Invalid state data returned for 'getState'", exc);
+        }
+        return nodeState;
+    }
+
+    /**
+     * Get the current block chain state
+     *
+     * @return                              Chain state
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static ChainState getChainState() throws NxtException {
+        ChainState chainState;
+        try {
+            PeerResponse response = issueRequest("getBlockchainStatus", null);
+            chainState = new ChainState(response);
+        } catch (IdentifierException | NumberFormatException exc) {
+            throw new NxtException("Invalid state data returned for 'getBlockchainStatus'", exc);
+        }
+        return chainState;
     }
 
     /**
      * Get a transaction
      *
-     * @param       txID                    Transaction identifier
+     * @param       txId                    Transaction identifier
      * @return                              Transaction
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static Transaction getTransaction(String txID) throws NxtException {
+    public static Transaction getTransaction(long txId) throws NxtException {
         Transaction tx;
-        PeerResponse response = issueRequest("getTransaction", String.format("transaction=%s", txID));
         try {
+            PeerResponse response = issueRequest("getTransaction", "transaction="+Utils.idToString(txId));
             tx = new Transaction(response);
+            if (tx.getTransactionId() != txId)
+                throw new NxtException("Calculated transaction identifier incorrect for tx "+Utils.idToString(txId));
         } catch (IdentifierException | NumberFormatException exc) {
             throw new NxtException("Unable to create transaction from peer response", exc);
         }
@@ -197,10 +284,10 @@ public class Nxt {
     /**
      * Issue the Nxt API request and return the parsed JSON response
      *
-     * @param       requestType     Request type
-     * @param       requestParams   Request parameters
-     * @return                      Parsed JSON response
-     * @throws      NxtException    Unable to issue Nxt API request
+     * @param       requestType             Request type
+     * @param       requestParams           Request parameters
+     * @return                              Parsed JSON response
+     * @throws      NxtException            Unable to issue Nxt API request
      */
     private static PeerResponse issueRequest(String requestType, String requestParams) throws NxtException {
         PeerResponse response = null;

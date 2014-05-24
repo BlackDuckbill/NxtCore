@@ -15,6 +15,9 @@
  */
 package org.ScripterRon.NxtCore;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import java.util.List;
 
 /**
@@ -22,21 +25,134 @@ import java.util.List;
  */
 public class Block {
 
-    /** Block identifier */
-    private final String blockId;
+    /** Block version */
+    private final int version;
 
-    /** Parsed getState response */
-    private final PeerResponse response;
+    /** Block identifier */
+    private final long blockId;
+
+    /** Block hash */
+    private final byte[] blockHash;
+
+    /** Generator identifier */
+    private final long generatorId;
+
+    /** Generator Reed-Solomon identifier */
+    private final String generatorRsId;
+
+    /** Generator public key */
+    private final byte[] generatorPublicKey;
+
+    /** Previous block identifier */
+    private final long previousBlockId;
+
+    /** Previous block hash */
+    private final byte[] previousBlockHash;
+
+    /** Next block identifier */
+    private final long nextBlockId;
+
+    /** Total amount */
+    private final long totalAmount;
+
+    /** Total fee */
+    private final long totalFee;
+
+    /** Payload length */
+    private final int payloadLength;
+
+    /** Payload hash */
+    private final byte[] payloadHash;
+
+    /** Block timestamp */
+    private final int timestamp;
+
+    /** Generation signature */
+    private final byte[] generationSignature;
+
+    /** Block signature */
+    private final byte[] blockSignature;
+
+    /** Block height */
+    private final int height;
+
+    /** Base target */
+    private final long baseTarget;
+
+    /** Transaction count */
+    private final int txCount;
+
+    /** Block transactions */
+    private final List<Long> txList;
 
     /**
-     * Create the block
+     * Create the block from the JSON response for 'getBlock'
      *
-     * @param       blockId         Block identifier from request
-     * @param       response        Response for getBlock request
+     * @param       response                Response for getBlock request
+     * @param       generatorPublicKey      Generator public key
+     * @throws      IdentifierException     Invalid object identifier
+     * @throws      NumberFormatException   Invalid numeric string
+     * @throws      NxtException            Invalid block format
      */
-    public Block(String blockId, PeerResponse response) {
-        this.response = response;
-        this.blockId = blockId;
+    public Block(PeerResponse response, byte[] generatorPublicKey)
+                                throws IdentifierException, NumberFormatException, NxtException {
+        this.version = response.getInt("version");
+        if (version > 3)
+            throw new NxtException(String.format("Block version %d is not supported", version));
+        this.previousBlockId = response.getId("previousBlock");
+        this.previousBlockHash = response.getHexString("previousBlockHash");
+        this.nextBlockId = response.getId("nextBlock");
+        this.totalAmount = response.getLongString("totalAmountNQT");
+        this.totalFee = response.getLongString("totalFeeNQT");
+        this.timestamp = response.getInt("timestamp");
+        this.generatorId = response.getId("generator");
+        this.generatorRsId = response.getString("generatorRS");
+        this.generatorPublicKey = generatorPublicKey;
+        this.generationSignature = response.getHexString("generationSignature");
+        this.blockSignature = response.getHexString("blockSignature");
+        this.payloadLength = response.getInt("payloadLength");
+        this.payloadHash = response.getHexString("payloadHash");
+        this.height = response.getInt("height");
+        this.baseTarget = response.getLong("baseTarget");
+        this.txCount = response.getInt("numberOfTransactions");
+        this.txList = response.getIdList("transactions");
+        //
+        // Calculate the block identifier and the block hash
+        //
+        blockHash = Crypto.singleDigest(getBytes(false));
+        blockId = Utils.fullHashToId(blockHash);
+    }
+
+    /**
+     * Get the block byte stream
+     *
+     * @param       excludeSignature        TRUE to exclude the block signature
+     * @return                              Byte stream
+     */
+    public final byte[] getBytes(boolean excludeSignature) {
+        byte[] bytes = new byte[152 + (version>=3 ? 16 : 8) + (excludeSignature ? 0 : 64)];
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        buf.putInt(version);
+        buf.putInt(timestamp);
+        buf.putLong(previousBlockId);
+        buf.putInt(txCount);
+        if (version >= 3) {                                         // 8-byte NQT values for version >= 3
+            buf.putLong(totalAmount);
+            buf.putLong(totalFee);
+        } else {                                                    // 4-byte NXT values for version < 3
+            buf.putInt((int)(totalAmount/Nxt.NQT_ADJUST));
+            buf.putInt((int)(totalFee/Nxt.NQT_ADJUST));
+        }
+        buf.putInt(payloadLength);
+        buf.put(payloadHash);
+        buf.put(generatorPublicKey);
+        buf.put(generationSignature);                               // Version 1 is 64 bytes, otherwise 32 bytes
+        if (version > 1)                                            // Previous block hash added in version 2
+            buf.put(previousBlockHash!=null ? previousBlockHash : new byte[32]);
+        if (!excludeSignature)
+            buf.put(blockSignature);
+        return bytes;
     }
 
     /**
@@ -45,7 +161,7 @@ public class Block {
      * @return                      Block version
      */
     public int getVersion() {
-        return response.getInt("version");
+        return version;
     }
 
     /**
@@ -54,7 +170,7 @@ public class Block {
      * @return                      Block timestamp
      */
     public long getTimestamp() {
-        return response.getLong("timestamp") + Nxt.genesisTimestamp;
+        return timestamp + Nxt.GENESIS_TIMESTAMP;
     }
 
     /**
@@ -62,38 +178,44 @@ public class Block {
      *
      * @return                      Block identifier
      */
-    public String getBlockId() {
+    public long getBlockId() {
         return blockId;
+    }
+
+    /**
+     * Return the block hash
+     *
+     * @return                      Block hash
+     */
+    public byte[] getBlockHash() {
+        return blockHash;
     }
 
     /**
      * Return the next block identifier
      *
-     * @return                      Next block identifier.  An empty string is returned
-     *                              if there is no next block.
+     * @return                      Next block identifier or 0 if there is no next block
      */
-    public String getNextBlockId() {
-        return response.getString("nextBlock");
+    public long getNextBlockId() {
+        return nextBlockId;
     }
 
     /**
      * Return the previous block identifier
      *
-     * @return                      Previous block identifier.  An empty string is returned
-     *                              if there is no previous block.
+     * @return                      Previous block identifier or 0 if there is no previous block
      */
-    public String getPreviousBlockId() {
-        return response.getString("previousBlock");
+    public long getPreviousBlockId() {
+        return previousBlockId;
     }
 
     /**
      * Return the previous block hash
      *
-     * @return                      Previous block hash.  An empty array is returned if
-     *                              there is no previous block.
+     * @return                      Previous block hash or null if there is no previous block
      */
     public byte[] getPreviousBlockHash() {
-        return Utils.parseHexString(response.getString("previousBlockHash"));
+        return previousBlockHash;
     }
 
     /**
@@ -102,7 +224,7 @@ public class Block {
      * @return                      Block height
      */
     public int getHeight() {
-        return response.getInt("height");
+        return height;
     }
 
     /**
@@ -111,7 +233,7 @@ public class Block {
      * @return                      Payload length
      */
     public int getPayloadLength() {
-        return response.getInt("payloadLength");
+        return payloadLength;
     }
 
     /**
@@ -120,7 +242,7 @@ public class Block {
      * @return                      Payload hash
      */
     public byte[] getPayloadHash() {
-        return Utils.parseHexString(response.getString("payloadHash"));
+        return payloadHash;
     }
 
     /**
@@ -129,16 +251,16 @@ public class Block {
      * @return                      Number of transactions
      */
     public int getTransactionCount() {
-        return response.getInt("numberOfTransactions");
+        return txCount;
     }
 
     /**
      * Return the transaction list
      *
-     * @return                      Transaction list
+     * @return                      List of transaction identifiers
      */
-    public List<String> getTransactionList() {
-        return response.getStringList("transactions");
+    public List<Long> getTransactionList() {
+        return txList;
     }
 
     /**
@@ -147,7 +269,7 @@ public class Block {
      * @return                      Total transaction amount
      */
     public long getTotalAmount() {
-        return response.getLong("totalAmountNQT");
+        return totalAmount;
     }
 
     /**
@@ -156,7 +278,7 @@ public class Block {
      * @return                      Total transaction fee
      */
     public long getTotalFee() {
-        return response.getLong("totalFeeNQT");
+        return totalFee;
     }
 
     /**
@@ -164,8 +286,8 @@ public class Block {
      *
      * @return                      Block generator identifier
      */
-    public String getGeneratorId() {
-        return response.getString("generator");
+    public long getGeneratorId() {
+        return generatorId;
     }
 
     /**
@@ -174,7 +296,16 @@ public class Block {
      * @return                      Block generator identifier
      */
     public String getGeneratorRsId() {
-        return response.getString("generatorRS");
+        return generatorRsId;
+    }
+
+    /**
+     * Return the generator public key
+     *
+     * @return                      Generator public key
+     */
+    public byte[] getGeneratorPublicKey() {
+        return generatorPublicKey;
     }
 
     /**
@@ -182,8 +313,8 @@ public class Block {
      *
      * @return                      Block generation signature
      */
-    public byte[] getGeneratorSignature() {
-        return Utils.parseHexString(response.getString("generationSignature"));
+    public byte[] getGenerationSignature() {
+        return generationSignature;
     }
 
     /**
@@ -192,7 +323,7 @@ public class Block {
      * @return                      Block signature
      */
     public byte[] getBlockSignature() {
-        return Utils.parseHexString(response.getString("blockSignature"));
+        return blockSignature;
     }
 
     /**
@@ -201,7 +332,7 @@ public class Block {
      * @return                      Base target
      */
     public long getBaseTarget() {
-        return response.getLong("baseTarget");
+        return baseTarget;
     }
 
     /**
@@ -211,7 +342,7 @@ public class Block {
      */
     @Override
     public int hashCode() {
-        return blockId.hashCode();
+        return (int)blockId;
     }
 
     /**
@@ -222,6 +353,6 @@ public class Block {
      */
     @Override
     public boolean equals(Object obj) {
-        return (obj != null && (obj instanceof Block) && blockId.equals(((Block)obj).blockId));
+        return (obj != null && (obj instanceof Block) && blockId==((Block)obj).blockId);
     }
 }

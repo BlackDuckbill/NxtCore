@@ -22,16 +22,106 @@ import java.math.BigInteger;
  */
 public class NodeState {
 
-    /** Parsed getState response */
-    private final PeerResponse response;
+    /** Application version */
+    private final String version;
+
+    /** Last block */
+    private final long lastBlockId;
+
+    /** Cumulative difficulty */
+    private final BigInteger cumulativeDifficulty;
+
+    /** Last block chain feeder */
+    private final String lastFeeder;
+
+    /** Last block chain feeder height */
+    private final int lastFeederHeight;
+
+    /** Number of peers */
+    private final int peerCount;
+
+    /** Number of blocks */
+    private final int blockCount;
+
+    /** Number of transactions */
+    private final long txCount;
+
+    /** Number of accounts */
+    private final long accountCount;
+
+    /** Number of aliases */
+    private final long aliasCount;
+
+    /** Number of orders */
+    private final long orderCount;
+
+    /** Number of votes */
+    private final long voteCount;
+
+    /** Number of trades */
+    private final long tradeCount;
+
+    /** Number of assets */
+    private final long assetCount;
+
+    /** Number of polls */
+    private final long pollCount;
+
+    /** Number of unlocked accounts */
+    private final int unlockedAccounts;
+
+    /** Total effective balance */
+    private final long totalEffectiveBalance;
+
+    /** Number of available processors */
+    private final int processorCount;
+
+    /** Total memory */
+    private final long totalMemory;
+
+    /** Maximum memory */
+    private final long maxMemory;
+
+    /** Free memory */
+    private final long freeMemory;
+
+    /** Is scanning the block chain */
+    private final boolean isScanning;
+
+    /** Node time */
+    private final int time;
 
     /**
      * Create the node state
      *
-     * @param       response        Response for getState request
+     * @param       response                Response for getState request
+     * @throws      IdentifierException     Invalid object identifier
+     * @throws      NumberFormatException   Invalid numeric string
      */
-    public NodeState(PeerResponse response) {
-        this.response = response;
+    public NodeState(PeerResponse response) throws IdentifierException, NumberFormatException {
+        this.version = response.getString("version");
+        this.lastBlockId = response.getId("lastBlock");
+        this.lastFeeder = response.getString("lastBlockchainFeeder");
+        this.lastFeederHeight = response.getInt("lastBlockchainFeederHeight");
+        this.cumulativeDifficulty = new BigInteger(response.getString("cumulativeDifficulty"));
+        this.isScanning = response.getBoolean("isScanning");
+        this.unlockedAccounts = response.getInt("numberOfUnlockedAccounts");
+        this.totalEffectiveBalance = response.getLong("totalEffectiveBalanceNXT") * Nxt.NQT_ADJUST;
+        this.peerCount = response.getInt("numberOfPeers");
+        this.blockCount = response.getInt("numberOfBlocks");
+        this.txCount = response.getLong("numberOfTransactions");
+        this.accountCount = response.getLong("numberOfAccounts");
+        this.aliasCount = response.getLong("numberOfAliases");
+        this.orderCount = response.getLong("numberOfOrders");
+        this.voteCount = response.getLong("numberOfVotes");
+        this.tradeCount = response.getLong("numberOfTrades");
+        this.assetCount = response.getLong("numberOfAssets");
+        this.pollCount = response.getLong("numberOfPolls");
+        this.time = response.getInt("time");
+        this.processorCount = response.getInt("availableProcessors");
+        this.totalMemory = response.getLong("totalMemory");
+        this.maxMemory = response.getLong("maxMemory");
+        this.freeMemory = response.getLong("freeMemory");
     }
 
     /**
@@ -40,7 +130,7 @@ public class NodeState {
      * @return                      Version
      */
     public String getVersion() {
-        return response.getString("version");
+        return version;
     }
 
     /**
@@ -49,7 +139,7 @@ public class NodeState {
      * @return                      Number of peers
      */
     public int getPeerCount() {
-        return response.getInt("numberOfPeers");
+        return peerCount;
     }
 
     /**
@@ -57,8 +147,35 @@ public class NodeState {
      *
      * @return                      Last block identifier
      */
-    public String getLastBlock() {
-        return response.getString("lastBlock");
+    public long getLastBlockId() {
+        return lastBlockId;
+    }
+
+    /**
+     * Check if the node is scanning the block chain
+     *
+     * @return                      TRUE if the node is scanning the block chain
+     */
+    public boolean isScanning() {
+        return isScanning;
+    }
+
+    /**
+     * Return the last block chain feeder
+     *
+     * @return                      IP address of the last block chain feeder
+     */
+    public String lastFeeder() {
+        return lastFeeder;
+    }
+
+    /**
+     * Return the chain height of the last feeder
+     *
+     * @return                      Chain height
+     */
+    public int lastFeederHeight() {
+        return lastFeederHeight;
     }
 
     /**
@@ -67,7 +184,7 @@ public class NodeState {
      * @return                      Number of blocks
      */
     public int getBlockCount() {
-        return response.getInt("numberOfBlocks");
+        return blockCount;
     }
 
     /**
@@ -76,7 +193,7 @@ public class NodeState {
      * @return                      Number of aliases
      */
     public long getAliasCount() {
-        return response.getLong("numberOfAliases");
+        return aliasCount;
     }
 
     /**
@@ -85,7 +202,7 @@ public class NodeState {
      * @return                      Number of transactions
      */
     public long getTransactionCount() {
-        return response.getLong("numberOfTransactions");
+        return txCount;
     }
 
     /**
@@ -94,7 +211,7 @@ public class NodeState {
      * @return                      Number of orders
      */
     public long getOrderCount() {
-        return response.getLong("numberOfOrders");
+        return orderCount;
     }
 
     /**
@@ -103,7 +220,7 @@ public class NodeState {
      * @return                      Number of trades
      */
     public long getTradeCount() {
-        return response.getLong("numberOfTrades");
+        return tradeCount;
     }
 
     /**
@@ -112,7 +229,7 @@ public class NodeState {
      * @return                      Number of votes
      */
     public long getVoteCount() {
-        return response.getLong("numberOfVotes");
+        return voteCount;
     }
 
     /**
@@ -121,7 +238,7 @@ public class NodeState {
      * @return                      Number of polls
      */
     public long getPollCount() {
-        return response.getLong("numberOfPolls");
+        return pollCount;
     }
 
     /**
@@ -130,16 +247,16 @@ public class NodeState {
      * @return                      Number of assets
      */
     public long getAssetCount() {
-        return response.getLong("numberOfAssets");
+        return assetCount;
     }
 
     /**
-     * Returns the total effective Nxt
+     * Returns the total effective balance
      *
-     * @return                      Total effective Nxt
+     * @return                      Total effective balance (NQT)
      */
-    public long getTotalEffectiveNxt() {
-        return response.getLong("totalEffectiveBalanceNXT") * Nxt.nqtAdjust;
+    public long getTotalEffectiveBalance() {
+        return totalEffectiveBalance * Nxt.NQT_ADJUST;
     }
 
     /**
@@ -148,7 +265,7 @@ public class NodeState {
      * @return                      Number of accounts
      */
     public long getAccountCount() {
-        return response.getLong("numberOfAccounts");
+        return accountCount;
     }
 
     /**
@@ -157,7 +274,7 @@ public class NodeState {
      * @return                      Number of unlocked accounts
      */
     public int getUnlockedAccountCount() {
-        return response.getInt("numberOfUnlockedAccounts");
+        return unlockedAccounts;
     }
 
     /**
@@ -166,6 +283,51 @@ public class NodeState {
      * @return                      Cumulative difficulty
      */
     public BigInteger getCumulativeDifficulty() {
-        return new BigInteger(response.getString("cumulativeDifficulty"));
+        return cumulativeDifficulty;
+    }
+
+    /**
+     * Return the node time in seconds since the epoch
+     *
+     * @return                      Node time
+     */
+    public long getTime() {
+        return time + Nxt.GENESIS_TIMESTAMP;
+    }
+
+    /**
+     * Return the number of available processors
+     *
+     * @return                      Number of processors
+     */
+    public int getProcessorCount() {
+        return processorCount;
+    }
+
+    /**
+     * Return the total memory
+     *
+     * @return                      Total memory
+     */
+    public long getTotalMemory() {
+        return totalMemory;
+    }
+
+    /**
+     * Return the maximum memory
+     *
+     * @return                      Maximum memory
+     */
+    public long getMaxMemory() {
+        return maxMemory;
+    }
+
+    /**
+     * Return the free memory
+     *
+     * @return                      Free memory
+     */
+    public long getFreeMemory() {
+        return freeMemory;
     }
 }

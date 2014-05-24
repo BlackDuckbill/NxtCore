@@ -19,20 +19,51 @@ package org.ScripterRon.NxtCore;
  * Account is the response for the 'getAccount' API request
  */
 public class Account {
-    /** Parsed getState response */
-    private final PeerResponse response;
 
     /** Account identifier */
-    private final String accountId;
+    private final long accountId;
+
+    /** Reed-Solomon identifier */
+    private final String accountRsId;
+
+    /** Name */
+    private final String name;
+
+    /** Description */
+    private final String description;
+
+    /** Public key */
+    private final byte[] publicKey;
+
+    /** Balance */
+    private final long balance;
+
+    /** Effective balance */
+    private final long effectiveBalance;
+
+    /** Unconfirmed balance */
+    private final long unconfirmedBalance;
+
+    /** Forged balance */
+    private final long forgedBalance;
 
     /**
-     * Create the account
+     * Create the account from the JSON response for 'getAccount'
      *
-     * @param       response        Response for getAccount request
+     * @param       response                Response for getAccount request
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NumberFormatException   Invalid numeric string
      */
-    public Account(PeerResponse response) {
-        this.response = response;
-        this.accountId = response.getString("account");
+    public Account(PeerResponse response) throws IdentifierException, NumberFormatException {
+        this.accountId = response.getId("account");
+        this.accountRsId = response.getString("accountRS");
+        this.name = response.getString("name");
+        this.description = response.getString("description");
+        this.publicKey = response.getHexString("publicKey");
+        this.balance = response.getLongString("balanceNQT");
+        this.effectiveBalance = response.getLong("effectiveBalanceNXT") * Nxt.NQT_ADJUST;
+        this.unconfirmedBalance = response.getLongString("unconfirmedBalanceNQT");
+        this.forgedBalance = response.getLongString("forgedBalanceNQT");
     }
 
     /**
@@ -40,17 +71,17 @@ public class Account {
      *
      * @return                      Account identifier
      */
-    public String getAccountId() {
+    public long getAccountId() {
         return accountId;
     }
 
     /**
      * Return the account Reed-Solomon identifier
      *
-     * @return                      Account identifier
+     * @return                      Account Reed-Solomon identifier
      */
     public String getAccountRsId() {
-        return response.getString("accountRS");
+        return accountRsId;
     }
 
     /**
@@ -59,7 +90,7 @@ public class Account {
      * @return                      Account name
      */
     public String getName() {
-        return response.getString("name");
+        return name;
     }
 
     /**
@@ -68,17 +99,16 @@ public class Account {
      * @return                      Account description
      */
     public String getDescription() {
-        return response.getString("description");
+        return description;
     }
 
     /**
      * Return the account public key
      *
-     * @return                      Account public key.  An empty byte array will be
-     *                              returned if the public key has not been set.
+     * @return                      Account public key or null if the public key has not been set
      */
     public byte[] getPublicKey() {
-        return Utils.parseHexString(response.getString("publicKey"));
+        return publicKey;
     }
 
     /**
@@ -87,7 +117,7 @@ public class Account {
      * @return                      Account balance
      */
     public long getConfirmedBalance() {
-        return response.getLongString("balanceNQT");
+        return balance;
     }
 
     /**
@@ -96,7 +126,7 @@ public class Account {
      * @return                      Effective account balance
      */
     public long getEffectiveBalance() {
-        return response.getLong("effectiveBalanceNXT") * Nxt.nqtAdjust;
+        return effectiveBalance;
     }
 
     /**
@@ -105,7 +135,7 @@ public class Account {
      * @return                      Unconfirmed account balance
      */
     public long getBalance() {
-        return response.getLongString("unconfirmedBalanceNQT");
+        return unconfirmedBalance;
     }
 
     /**
@@ -115,7 +145,7 @@ public class Account {
      * @return                      Forged balanced
      */
     public long getForgedBalance() {
-        return response.getLongString("forgedBalanceNQT");
+        return forgedBalance;
     }
 
     /**
@@ -125,7 +155,7 @@ public class Account {
      */
     @Override
     public int hashCode() {
-        return accountId.hashCode();
+        return (int)accountId;
     }
 
     /**
@@ -136,6 +166,6 @@ public class Account {
      */
     @Override
     public boolean equals(Object obj) {
-        return (obj != null && (obj instanceof Account) && accountId.equals(((Account)obj).accountId));
+        return (obj != null && (obj instanceof Account) && accountId==((Account)obj).accountId);
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.ScripterRon.NxtCore;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,8 +26,11 @@ import org.json.simple.JSONObject;
  */
 public class PeerResponse extends JSONObject {
 
-    /** Empty list */
-    private static final List<String> emptyList = Collections.emptyList();
+    /** Empty string list */
+    private static final List<String> emptyStringList = Collections.emptyList();
+
+    /** Empty long list */
+    private static final List<Long> emptyLongList = Collections.emptyList();
 
     /**
      * Create the response object
@@ -116,6 +120,26 @@ public class PeerResponse extends JSONObject {
     }
 
     /**
+     * Return a list of object identifiers
+     *
+     * @param       key                     JSON key
+     * @return                              Identifier list (empty list if key not found)
+     * @throws      IdentifierException     Invalid object identifier
+     */
+    public List<Long> getIdList(String key) throws IdentifierException {
+        Object value = get(key);
+        if (value == null || !(value instanceof List))
+            return emptyLongList;
+        List<String> stringList = (List<String>)value;
+        if (stringList.isEmpty())
+            return emptyLongList;
+        List<Long> longList = new ArrayList<>(stringList.size());
+        for (String longString : stringList)
+            longList.add(Utils.stringToId(longString));
+        return longList;
+    }
+
+    /**
      * Return a string value
      *
      * @param       key                     JSON key
@@ -146,6 +170,6 @@ public class PeerResponse extends JSONObject {
      */
     public List<String> getStringList(String key) {
         Object value = get(key);
-        return (value!=null && (value instanceof List) ? (List<String>)value : emptyList);
+        return (value!=null && (value instanceof List) ? (List<String>)value : emptyStringList);
     }
 }

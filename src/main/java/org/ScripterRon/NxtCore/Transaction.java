@@ -84,7 +84,7 @@ public class Transaction {
     private final byte[] signature;
 
     /**
-     * Create a signed transaction from the JSON response
+     * Create a signed transaction from the JSON response for 'getTransaction'
      *
      * @param       response                Response for getTransaction request
      * @throws      IdentifierException     Invalid object identifier
@@ -155,7 +155,7 @@ public class Transaction {
         this.amount = amount;
         this.fee = fee;
         this.deadline = deadline;
-        this.timestamp = (int)((System.currentTimeMillis()+500)/1000 - Nxt.genesisTimestamp);
+        this.timestamp = (int)((System.currentTimeMillis()+500)/1000 - Nxt.GENESIS_TIMESTAMP);
         this.attachment = attachment;
         this.blockId = 0;
         this.blockTimestamp = 0;
@@ -176,6 +176,10 @@ public class Transaction {
 
     /**
      * Return the transaction bytes
+     *
+     * The transaction bytes will be correct only for transactions included in Version 3 blocks or later.
+     * Since the transaction does not contain a version number, we have no way of knowing if the transaction
+     * was signed using NXT or NQT values for the amount and fee.
      *
      * @param       zeroSignature           TRUE to zero the signature bytes
      * @return                              Transaction bytes or null
@@ -335,7 +339,7 @@ public class Transaction {
      * @return                              Transaction timestamp
      */
     public long getTimeStamp() {
-        return timestamp + Nxt.genesisTimestamp;
+        return timestamp + Nxt.GENESIS_TIMESTAMP;
     }
 
     /**
@@ -398,7 +402,7 @@ public class Transaction {
      * @return                              Block timestamp or 0 if not in a block
      */
     public long getBlockTimestamp() {
-        return (blockId!=0 ? blockTimestamp+Nxt.genesisTimestamp : 0);
+        return (blockId!=0 ? blockTimestamp+Nxt.GENESIS_TIMESTAMP : 0);
     }
 
     /**
