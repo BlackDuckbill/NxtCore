@@ -29,11 +29,13 @@ public class ArbitraryMessage implements Attachment {
     /**
      * Create an Arbitrary Message attachment
      *
-     * @param       message                 Message
+     * @param       message                 Message (max 1000 bytes)
      */
     public ArbitraryMessage(byte[] message) {
         if (message == null)
             throw new IllegalArgumentException("No message specified");
+        if (message.length > 1000)
+            throw new IllegalArgumentException("Maximum message length is 1000 bytes");
         this.message = message;
     }
 

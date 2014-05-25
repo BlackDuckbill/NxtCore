@@ -3,8 +3,6 @@ NxtCore
 
 NxtCore provides support for accessing the Nxt API.  It communicates with a Nxt node using an HTTP connection to the API port.  Your secret phrase is never sent to the API server, so it is safe to use with a remote node.
 
-The API server is polled every 2 minutes to update the account/transaction status.
-
 A compiled version of NxtCore is available here: https://drive.google.com/folderview?id=0B1312_6UqRHPYjUtbU1hdW9VMW8&usp=sharing.  Download the desired archive file and extract the files to a directory of your choice.  If you are building from the source, the dependent jar files can also be obtained here.  The files are signed with the GPG key for Ronald.Hoffman6@gmail.com (D6190F05).
 
 

@@ -57,7 +57,7 @@ public class Transaction {
     private final int timestamp;
 
     /** Deadline */
-    private final short deadline;
+    private final int deadline;
 
     /** Referenced transaction hash */
     private final byte[] referencedTxHash;
@@ -105,7 +105,7 @@ public class Transaction {
         recipientId = response.getId("recipient");
         recipientRsId = response.getString("recipientRS");
         timestamp = response.getInt("timestamp");
-        deadline = response.getShort("deadline");
+        deadline = response.getInt("deadline");
         referencedTxHash = response.getHexString("referencedTransactionFullHash");
         senderPublicKey = response.getHexString("senderPublicKey");
         signature = response.getHexString("signature");
@@ -136,15 +136,17 @@ public class Transaction {
      * @param       recipientId             Transaction recipient
      * @param       amount                  Transaction amount
      * @param       fee                     Transaction fee
-     * @param       deadline                Transaction deadline (minutes)
+     * @param       deadline                Transaction deadline (max 1440 minutes)
      * @param       referencedTxHash        Referenced transaction hash or null
      * @param       attachment              Transaction attachment or null
      * @param       passPhrase              Sender secret phrase
      * @throws      KeyException            Unable to perform cryptographic operation
      */
     public Transaction(TransactionType txType, long recipientId, long amount, long fee,
-                                    short deadline, byte[] referencedTxHash, Attachment attachment,
+                                    int deadline, byte[] referencedTxHash, Attachment attachment,
                                     String passPhrase) throws KeyException {
+        if (deadline > 1440)
+            throw new IllegalArgumentException("Maximum deadline is 1440 minutes");
         this.txType = txType;
         this.senderPublicKey = Crypto.getPublicKey(passPhrase);
         this.senderId = Utils.getAccountId(senderPublicKey);
@@ -201,7 +203,7 @@ public class Transaction {
         txBuffer.put((txType.getType()));
         txBuffer.put(txType.getSubtype());
         txBuffer.putInt(timestamp);
-        txBuffer.putShort(deadline);
+        txBuffer.putShort((short)deadline);
         txBuffer.put(senderPublicKey);
         txBuffer.putLong(recipientId);
         txBuffer.putLong(amount);
@@ -347,7 +349,7 @@ public class Transaction {
      *
      * @return                              Transaction deadline in minutes
      */
-    public short getDeadline() {
+    public int getDeadline() {
         return deadline;
     }
 

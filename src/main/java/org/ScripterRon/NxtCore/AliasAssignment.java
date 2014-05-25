@@ -56,20 +56,10 @@ public class AliasAssignment implements Attachment {
      * Create an Alias Assignment attachment from the JSON response
      *
      * @param       response                JSON response
-     * @throws      NumberFormatException   Invalid numeric string
-     * @throws      NxtException            Invalid response
      */
-    public AliasAssignment(PeerResponse response) throws NumberFormatException, NxtException {
+    public AliasAssignment(PeerResponse response) {
         this.name = response.getString("alias");
         this.uri = response.getString("uri");
-        if (name.isEmpty())
-            throw new NxtException("Alias name not specified");
-        if (this.name.length() > 100)
-            throw new NxtException("Maximum alias name length is 100");
-        if (this.uri.length() > 1000)
-            throw new NxtException("Maximum alias URI length is 1000");
-        if (!this.name.matches("\\p{Alnum}*"))
-            throw new NxtException("Alias name must consist of alphanumeric characters");
     }
 
     /**

@@ -23,6 +23,8 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
+import java.math.BigInteger;
+
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -48,6 +50,9 @@ public class Nxt {
         cal.set(2013, 10, 24, 12, 0, 0);
         GENESIS_TIMESTAMP = cal.getTimeInMillis()/1000;
     }
+
+    /** Genesis account identifier */
+    public static final long GENESIS_ACCOUNT_ID = new BigInteger("1739068987193023818").longValue();
 
     /** NXT <-> NQT */
     public static final long NQT_ADJUST = 100000000L;

@@ -108,6 +108,18 @@ public class PeerResponse extends JSONObject {
     }
 
     /**
+     * Return a list of long values
+     *
+     * @param       key                     JSON key
+     * @return                              List of long values (empty list if key not found)
+     */
+    public List<Long> getLongList(String key) {
+        Object value = get(key);
+        return (value!=null && (value instanceof List) && !((List)value).isEmpty() &&
+                (((List)value).get(0) instanceof Long) ? (List<Long>)value : emptyLongList);
+    }
+
+    /**
      * Return an object identifier
      *
      * @param       key                     JSON key
@@ -128,11 +140,10 @@ public class PeerResponse extends JSONObject {
      */
     public List<Long> getIdList(String key) throws IdentifierException {
         Object value = get(key);
-        if (value == null || !(value instanceof List))
+        if (value == null || !(value instanceof List) || ((List)value).isEmpty() ||
+                                            !(((List)value).get(0) instanceof String))
             return emptyLongList;
         List<String> stringList = (List<String>)value;
-        if (stringList.isEmpty())
-            return emptyLongList;
         List<Long> longList = new ArrayList<>(stringList.size());
         for (String longString : stringList)
             longList.add(Utils.stringToId(longString));
@@ -170,6 +181,7 @@ public class PeerResponse extends JSONObject {
      */
     public List<String> getStringList(String key) {
         Object value = get(key);
-        return (value!=null && (value instanceof List) ? (List<String>)value : emptyStringList);
+        return (value!=null && (value instanceof List) && !((List)value).isEmpty() &&
+                (((List)value).get(0) instanceof String) ? (List<String>)value : emptyStringList);
     }
 }
