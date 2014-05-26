@@ -57,14 +57,28 @@ public class Nxt {
     /** NXT <-> NQT */
     public static final long NQT_ADJUST = 100000000L;
 
-    /** API reason codes */
+    /** Minimum transaction amount */
+    public static final long MINIMUM_TX_AMOUNT = 1 * NQT_ADJUST;
+
+    /** Minimum transaction fee */
+    public static final long MINIMUM_TX_FEE = 1 * NQT_ADJUST;
+
+    /** Incorrect request error */
     public static final int INCORRECT_REQUEST = 1;
+    /** Missing parameter error */
     public static final int MISSING_PARAMETER = 3;
+    /** Incorrect parameter error */
     public static final int INCORRECT_PARAMETER = 4;
+    /** Unknown object error */
     public static final int UNKNOWN_OBJECT = 5;
+    /** Insufficient funds error */
     public static final int NOT_ENOUGH = 6;
+    /** Request is not allowed */
     public static final int NOT_ALLOWED = 7;
-    public static final int NOT_AVAILABLE = 9;
+    /** Object is not available */
+    public static final int OBJECT_NOT_AVAILABLE = 8;
+    /** Request function is not available */
+    public static final int FUNCTION_NOT_AVAILABLE = 9;
 
     /** Nxt node host name */
     private static String nodeName;
@@ -86,15 +100,18 @@ public class Nxt {
     /**
      * Broadcast a signed transaction
      *
-     * @param       txBytes                 Signed transaction bytes
+     * @param       tx                      Signed transaction
      * @return                              Transaction identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static long broadcastTransaction(byte[] txBytes) throws NxtException {
+    public static long broadcastTransaction(Transaction tx) throws NxtException {
         long txId;
         try {
-            PeerResponse response = issueRequest("broadcastTransaction", "transactionBytes="+Utils.toHexString(txBytes));
+            PeerResponse response = issueRequest("broadcastTransaction",
+                                                 "transactionBytes="+Utils.toHexString(tx.getBytes(false)));
             txId = response.getId("transaction");
+            if (txId != tx.getTransactionId())
+                throw new NxtException("Incorrect transaction identifier returned for 'broadcastTransaction'");
         } catch (IdentifierException exc) {
             throw new NxtException("Invalid transaction identifier returned for 'broadcastTransaction'", exc);
         }
@@ -113,6 +130,8 @@ public class Nxt {
         try {
             PeerResponse response = issueRequest("getAccount", "account="+Utils.idToString(accountId));
             account = new Account(response);
+            if (account.getAccountId() != accountId)
+                throw new NxtException("Incorrect account returned for 'getAccount'");
         } catch (IdentifierException | NumberFormatException exc) {
             throw new NxtException("Invalid account data returned for 'getAccount'", exc);
         }
@@ -131,6 +150,8 @@ public class Nxt {
         try {
             PeerResponse response = issueRequest("getAccountPublicKey", "account="+Utils.idToString(accountId));
             publicKey = response.getHexString("publicKey");
+            if (Utils.getAccountId(publicKey) != accountId)
+                throw new NxtException("Incorrect public key return for 'getAccountPublicKey");
         } catch (NumberFormatException exc) {
             throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
         }
@@ -209,6 +230,78 @@ public class Nxt {
         txList.addAll(confList);
         txList.addAll(unconfList);
         return txList;
+    }
+
+    /**
+     * Get an alias using the alias identifier
+     *
+     * @param       aliasId                 Alias identifier
+     * @return                              Alias or null if the alias is not found
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static Alias getAlias(long aliasId) throws NxtException {
+        Alias alias;
+        try {
+            PeerResponse response = issueRequest("getAlias", "alias="+Utils.idToString(aliasId));
+            alias = new Alias(response);
+            if (alias.getAliasId() != aliasId)
+                throw new NxtException("Incorrect alias returned for 'getAlias' request");
+        } catch (IdentifierException exc) {
+            throw new NxtException("Invalid alias data returned for 'getAlias'", exc);
+        }
+        return alias;
+    }
+
+    /**
+     * Get an alias using the alias name
+     *
+     * @param       aliasName               Alias name
+     * @return                              Alias or null if the alias is not found
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static Alias getAlias(String aliasName) throws NxtException {
+        Alias alias;
+        try {
+            PeerResponse response = issueRequest("getAlias", "aliasName="+aliasName);
+            alias = new Alias(response);
+            if (!alias.getAliasName().equals(aliasName))
+                throw new NxtException("Incorrect alias returned for 'getAlias' request");
+        } catch (IdentifierException exc) {
+            throw new NxtException("Invalid alias data returned for 'getAlias'", exc);
+        }
+        return alias;
+    }
+
+    /**
+     * Get the aliases assigned to the specified account that were created after the specified time.
+     *
+     * @param       accountId               Account identifier
+     * @param       timestamp               Alias timestamp (specify 0 to get all aliases)
+     * @return                              Alias list (empty list returned if no aliases are found)
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Alias> getAliases(long accountId, long timestamp) throws NxtException {
+        List<Alias> aliasList;
+        long aliasTimestamp = Math.max(timestamp-GENESIS_TIMESTAMP, 0);
+        try {
+            PeerResponse response = issueRequest("getAliases",
+                    String.format("account=%s&timestamp=%d", Utils.idToString(accountId), aliasTimestamp));
+            List<PeerResponse> aliases = (List<PeerResponse>)response.get("aliases");
+            if (aliases == null) {
+                aliasList = new ArrayList<>(1);
+            } else {
+                aliasList = new ArrayList<>(aliases.size());
+                for (PeerResponse aliasResponse : aliases) {
+                    Alias alias = new Alias(aliasResponse);
+                    if (alias.getAccountId() != accountId)
+                        throw new NxtException("Incorrect alias account identifier for 'getAliases'");
+                    aliasList.add(alias);
+                }
+            }
+        } catch (IdentifierException exc) {
+            throw new NxtException("Invalid alias data returned for 'getAliases'", exc);
+        }
+        return aliasList;
     }
 
     /**

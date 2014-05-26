@@ -20,43 +20,63 @@ package org.ScripterRon.NxtCore;
  */
 public abstract class TransactionType {
 
-    /** Transaction types */
+    /** Payment transaction */
     public static final byte TYPE_PAYMENT = 0;
-    public static final byte TYPE_MESSAGING = 1;
-    public static final byte TYPE_COLORED_COINS = 2;
-    public static final byte TYPE_DIGITAL_GOODS = 3;
-    public static final byte TYPE_ACCOUNT_CONTROL = 4;
-
-    /** Payment subtypes */
+    /** Send ordinary payment */
     public static final byte SUBTYPE_PAYMENT_ORDINARY_PAYMENT = 0;
 
-    /** Messaging subtypes */
+    /** Messaging transaction */
+    public static final byte TYPE_MESSAGING = 1;
+    /** Send arbitrary message */
     public static final byte SUBTYPE_MESSAGING_ARBITRARY_MESSAGE = 0;
+    /** Assign alias */
     public static final byte SUBTYPE_MESSAGING_ALIAS_ASSIGNMENT = 1;
+    /** Create poll */
     public static final byte SUBTYPE_MESSAGING_POLL_CREATION = 2;
+    /** Cast vote */
     public static final byte SUBTYPE_MESSAGING_VOTE_CASTING = 3;
+    /** Announce hub */
     public static final byte SUBTYPE_MESSAGING_HUB_ANNOUNCEMENT = 4;
+    /** Set account information */
     public static final byte SUBTYPE_MESSAGING_ACCOUNT_INFO = 5;
 
-    /** Colored coin subtypes */
+    /** Colored coin transaction */
+    public static final byte TYPE_COLORED_COINS = 2;
+    /** Issue asset*/
     public static final byte SUBTYPE_COLORED_COINS_ASSET_ISSUANCE = 0;
+    /** Transfer asset */
     public static final byte SUBTYPE_COLORED_COINS_ASSET_TRANSFER = 1;
+    /** Place ask order */
     public static final byte SUBTYPE_COLORED_COINS_ASK_ORDER_PLACEMENT = 2;
+    /** Place bid order */
     public static final byte SUBTYPE_COLORED_COINS_BID_ORDER_PLACEMENT = 3;
+    /** Cancel ask order */
     public static final byte SUBTYPE_COLORED_COINS_ASK_ORDER_CANCELLATION = 4;
+    /** Cancel bid order */
     public static final byte SUBTYPE_COLORED_COINS_BID_ORDER_CANCELLATION = 5;
 
-    /** Digital goods subtypes */
+    /** Digital goods transaction */
+    public static final byte TYPE_DIGITAL_GOODS = 3;
+    /** List digital goods */
     public static final byte SUBTYPE_DIGITAL_GOODS_LISTING = 0;
+    /** Delist digital goods */
     public static final byte SUBTYPE_DIGITAL_GOODS_DELISTING = 1;
+    /** Change digital goods price */
     public static final byte SUBTYPE_DIGITAL_GOODS_PRICE_CHANGE = 2;
+    /** Change digital good quantity */
     public static final byte SUBTYPE_DIGITAL_GOODS_QUANTITY_CHANGE = 3;
+    /** Purchase digital goods */
     public static final byte SUBTYPE_DIGITAL_GOODS_PURCHASE = 4;
+    /** Digital goods delivery */
     public static final byte SUBTYPE_DIGITAL_GOODS_DELIVERY = 5;
+    /** Digital goods feedback */
     public static final byte SUBTYPE_DIGITAL_GOODS_FEEDBACK = 6;
+    /** Digital goods refund */
     public static final byte SUBTYPE_DIGITAL_GOODS_REFUND = 7;
 
-    /** Account control subtypes */
+    /** Account control transaction */
+    public static final byte TYPE_ACCOUNT_CONTROL = 4;
+    /** Lease effective balance */
     public static final byte SUBTYPE_ACCOUNT_CONTROL_EFFECTIVE_BALANCE_LEASING = 0;
 
     /**
@@ -192,6 +212,27 @@ public abstract class TransactionType {
     public Attachment loadAttachment(PeerResponse response)
                                             throws IdentifierException, NumberFormatException, NxtException {
         return null;
+    }
+
+    /**
+     * Return the transaction type hash code
+     *
+     * @return                              Hash code
+     */
+    @Override
+    public int hashCode() {
+        return (getType()<<8) | getSubtype();
+    }
+
+    /**
+     * Check if two transaction types are equals
+     *
+     * @param       obj                     Transaction type to check
+     * @return                              TRUE if the transaction types are equal
+     */
+    @Override
+    public boolean equals(Object obj) {
+        return (obj!=null && (obj instanceof TransactionType) && hashCode()==((TransactionType)obj).hashCode());
     }
 
     /**

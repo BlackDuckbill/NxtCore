@@ -12,10 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/*
- *  Reed Solomon Encoding and Decoding for Nxt
  *
  *  Version: 1.0, license: Public Domain, coder: NxtChg (admin@nxtchg.com)
  *  Java Version: ChuckOne (ChuckOne@mail.de).
@@ -24,6 +20,9 @@ package org.ScripterRon.NxtCore;
 
 import java.math.BigInteger;
 
+/**
+ * Reed-Solomon encoding and decoding for Nxt account identifiers
+ */
 public class ReedSolomon {
 
     private static final int[] initial_codeword = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};

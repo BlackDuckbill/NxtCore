@@ -340,7 +340,7 @@ public class Transaction {
      *
      * @return                              Transaction timestamp
      */
-    public long getTimeStamp() {
+    public long getTimestamp() {
         return timestamp + Nxt.GENESIS_TIMESTAMP;
     }
 
