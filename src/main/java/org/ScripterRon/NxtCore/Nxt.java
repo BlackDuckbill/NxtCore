@@ -423,7 +423,32 @@ public class Nxt {
             throw new NxtException("Unable to sign transaction", exc);
         }
         return txId;
+    }
 
+    /**
+     * Lease effective account balance
+     *
+     * @param       recipientId             Recipient identifier
+     * @param       period                  Lease period (blocks between 1440 and 32767)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to lease account balance
+     */
+    public static long leaseBalance(long recipientId, int period, long fee, int deadline,
+                                byte[] referencedTxHash, String passPhrase) throws NxtException {
+        long txId;
+        try {
+            TransactionType txType = TransactionType.AccountControl.EFFECTIVE_BALANCE_LEASING;
+            BalanceLeasing attachment = new BalanceLeasing(period);
+            Transaction tx = new Transaction(txType, recipientId, 0, fee, deadline, null, attachment, passPhrase);
+            txId = Nxt.broadcastTransaction(tx);
+        } catch (KeyException exc) {
+            throw new NxtException("Unable to sign transaction", exc);
+        }
+        return txId;
     }
 
     /**

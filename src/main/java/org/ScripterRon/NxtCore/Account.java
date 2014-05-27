@@ -15,6 +15,8 @@
  */
 package org.ScripterRon.NxtCore;
 
+import java.util.List;
+
 /**
  * Account is the response for the 'getAccount' API request
  */
@@ -47,6 +49,27 @@ public class Account {
     /** Forged balance */
     private final long forgedBalance;
 
+    /** Current lessee */
+    private final long currentLesseeId;
+
+    /** Current lessee start height */
+    private final int currentLeasingFrom;
+
+    /** Current lessee end height */
+    private final int currentLeasingTo;
+
+    /** Next lessee */
+    private final long nextLesseeId;
+
+    /** Next lessee start height */
+    private final int nextLeasingFrom;
+
+    /** Next lessee end height */
+    private final int nextLeasingTo;
+
+    /** Lessor list */
+    private final List<Long> lessors;
+
     /**
      * Create the account from the JSON response for 'getAccount'
      *
@@ -64,6 +87,13 @@ public class Account {
         this.effectiveBalance = response.getLong("effectiveBalanceNXT") * Nxt.NQT_ADJUST;
         this.unconfirmedBalance = response.getLongString("unconfirmedBalanceNQT");
         this.forgedBalance = response.getLongString("forgedBalanceNQT");
+        this.currentLesseeId = response.getId("currentLessee");
+        this.currentLeasingFrom = response.getInt("currentLeasingHeightFrom");
+        this.currentLeasingTo = response.getInt("currentLeasingHeightTo");
+        this.nextLesseeId = response.getId("nextLessee");
+        this.nextLeasingFrom = response.getInt("nextLeasingHeightFrom");
+        this.nextLeasingTo = response.getInt("nextLeasingHeightTo");
+        this.lessors = response.getIdList("lessors");
     }
 
     /**
@@ -146,6 +176,69 @@ public class Account {
      */
     public long getForgedBalance() {
         return forgedBalance;
+    }
+
+    /**
+     * Return the current balance lessee
+     *
+     * @return                      Account identifier or 0 if the balance is not leased
+     */
+    public long getCurrentLesseeId() {
+        return currentLesseeId;
+    }
+
+    /**
+     * Return the current leasing from block height
+     *
+     * @return                      Leasing from block height or 0 if the balance is not leased
+     */
+    public int getCurrentLeasingFromHeight() {
+        return currentLeasingFrom;
+    }
+
+    /**
+     * Return the current leasing to block height
+     *
+     * @return                      Leasing to block height or 0 if the balance is not leased
+     */
+    public int getCurrentLeasingToHeight() {
+        return currentLeasingTo;
+    }
+
+    /**
+     * Return the next balance lessee
+     *
+     * @return                      Account identifier or 0 if there is no next lessee
+     */
+    public long getNextLesseeId() {
+        return nextLesseeId;
+    }
+
+    /**
+     * Return the next leasing from block height
+     *
+     * @return                      Leasing from block height or 0 if there is no next lessee
+     */
+    public int getNextLeasingFromHeight() {
+        return nextLeasingFrom;
+    }
+
+    /**
+     * Return the next leasing to block height
+     *
+     * @return                      Leasing to block height or 0 if there is no next lessee
+     */
+    public int getNextLeasingToHeight() {
+        return nextLeasingTo;
+    }
+
+    /**
+     * Return the list of balance lessors
+     *
+     * @return                      Balance lessors (an empty list is returned if there are no lessors)
+     */
+    public List<Long> getBalanceLessors() {
+        return lessors;
     }
 
     /**
