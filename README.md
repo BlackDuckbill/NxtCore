@@ -45,3 +45,10 @@ To assign an alias, you need to create and broadcast a messaging transaction.  T
     Transaction tx = new Transaction(txType, Nxt.GENESIS_ACCOUNT_ID, 0, Nxt.MINIMUM_TX_FEE, deadline, null, attachment, secretPhrase);
     long txId = Nxt.broadcastTransaction(tx);
 
+To set the account information, you need to create and broadcast a messaging transaction.
+
+    TransactionType txType = TransactionType.Messaging.ACCOUNT_INFO;
+    Attachment attachment = new AccountInfo(accountName, accountDescription);
+    Transaction tx = new Transaction(txType, Nxt.GENESIS_ACCOUNT_ID, 0, Nxt.MINIMUM_TX_FEE, deadline, null, attachment, secretPhrase);
+    long txId = Nxt.broadcastTransaction(tx);
+

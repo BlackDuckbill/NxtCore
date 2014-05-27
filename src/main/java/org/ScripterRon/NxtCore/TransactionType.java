@@ -209,8 +209,7 @@ public abstract class TransactionType {
      * @throws      NumberFormatException   Invalid numeric string
      * @throws      NxtException            Invalid peer response
      */
-    public Attachment loadAttachment(PeerResponse response)
-                                            throws IdentifierException, NumberFormatException, NxtException {
+    public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
         return null;
     }
 
@@ -321,8 +320,7 @@ public abstract class TransactionType {
              * @throws      NxtException            Invalid peer response
              */
             @Override
-            public Attachment loadAttachment(PeerResponse response)
-                                        throws IdentifierException, NumberFormatException, NxtException {
+            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
                 return new ArbitraryMessage(response);
             }
         };
@@ -360,8 +358,7 @@ public abstract class TransactionType {
              * @throws      NxtException            Invalid peer response
              */
             @Override
-            public Attachment loadAttachment(PeerResponse response)
-                                        throws IdentifierException, NumberFormatException, NxtException {
+            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
                 return new AliasAssignment(response);
             }
         };
@@ -399,8 +396,7 @@ public abstract class TransactionType {
              * @throws      NxtException            Invalid peer response
              */
             @Override
-            public Attachment loadAttachment(PeerResponse response)
-                                        throws IdentifierException, NumberFormatException, NxtException {
+            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
                 return new PollCreation(response);
             }
         };
@@ -426,6 +422,20 @@ public abstract class TransactionType {
             @Override
             public String getDescription() {
                 return "Vote casting";
+            }
+
+            /**
+             * Create an attachment from the JSON response
+             *
+             * @param       response                JSON response
+             * @return                              Attachment
+             * @throws      IdentifierException     Invalid object identifier
+             * @throws      NumberFormatException   Invalid numeric string
+             * @throws      NxtException            Invalid peer response
+             */
+            @Override
+            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
+                return new VoteCasting(response);
             }
         };
 
@@ -474,6 +484,20 @@ public abstract class TransactionType {
             @Override
             public String getDescription() {
                 return "Account information";
+            }
+
+            /**
+             * Create an attachment from the JSON response
+             *
+             * @param       response                JSON response
+             * @return                              Attachment
+             * @throws      IdentifierException     Invalid object identifier
+             * @throws      NumberFormatException   Invalid numeric string
+             * @throws      NxtException            Invalid peer response
+             */
+            @Override
+            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
+                return new AccountInfo(response);
             }
         };
     }
