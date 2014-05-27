@@ -86,8 +86,14 @@ public class Nxt {
     /** Nxt node API port */
     private static int nodePort;
 
+    /** Connect timeout */
+    private static int nodeConnectTimeout = 5000;
+
+    /** Read timeout */
+    private static int nodeReadTimeout = 30000;
+
     /**
-     * Initialize the Nxt core library
+     * Initialize the Nxt core library using default timeout values
      *
      * @param       hostName                Host name or IP address of the node server
      * @param       apiPort                 Port for the node server
@@ -95,6 +101,21 @@ public class Nxt {
     public static void init(String hostName, int apiPort) {
         nodeName = hostName;
         nodePort = apiPort;
+    }
+
+    /**
+     * Initialize the Nxt core library using the supplied timeout values
+     *
+     * @param       hostName                Host name or IP address of the node server
+     * @param       apiPort                 Port for the node server
+     * @param       connectTimeout          HTTP connect timeout in milliseconds
+     * @param       readTimeout             HTTP read timeout in milliseconds
+     */
+    public static void init(String hostName, int apiPort, int connectTimeout, int readTimeout) {
+        nodeName = hostName;
+        nodePort = apiPort;
+        nodeConnectTimeout = connectTimeout;
+        nodeReadTimeout = readTimeout;
     }
 
     /**
@@ -379,6 +400,111 @@ public class Nxt {
     }
 
     /**
+     * Assign an alias
+     *
+     * @param       aliasName               Alias name (maximum length 100, alphanumeric only)
+     * @param       aliasUri                Alias URI (maximum length 1000)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to assign the alias
+     */
+    public static long assignAlias(String aliasName, String aliasUri, long fee, int deadline,
+                                byte[] referencedTxHash, String passPhrase) throws NxtException {
+        long txId;
+        try {
+            TransactionType txType = TransactionType.Messaging.ALIAS_ASSIGNMENT;
+            AliasAssignment attachment = new AliasAssignment(aliasName, aliasUri);
+            Transaction tx = new Transaction(txType, GENESIS_ACCOUNT_ID, 0, fee, deadline, null, attachment, passPhrase);
+            txId = Nxt.broadcastTransaction(tx);
+        } catch (KeyException exc) {
+            throw new NxtException("Unable to sign transaction", exc);
+        }
+        return txId;
+
+    }
+
+    /**
+     * Send a message
+     *
+     * @param       recipientId             Recipient identifier
+     * @param       message                 Message to be sent (maximum length 1000)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to send message
+     */
+    public static long sendMessage(long recipientId, byte[] message, long fee, int deadline,
+                                byte[] referencedTxHash, String passPhrase) throws NxtException {
+        long txId;
+        try {
+            TransactionType txType = TransactionType.Messaging.ARBITRARY_MESSAGE;
+            ArbitraryMessage attachment = new ArbitraryMessage(message);
+            Transaction tx = new Transaction(txType, recipientId, 0, fee, deadline, null, attachment, passPhrase);
+            txId = Nxt.broadcastTransaction(tx);
+        } catch (KeyException exc) {
+            throw new NxtException("Unable to sign transaction", exc);
+        }
+        return txId;
+    }
+
+    /**
+     * Send Nxt
+     *
+     * @param       recipientId             Recipient identifier
+     * @param       amount                  Amount to send (NQT)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to send Nxt
+     */
+    public static long sendNxt(long recipientId, long amount, long fee, int deadline, byte[] referencedTxHash,
+                               String passPhrase) throws NxtException {
+        long txId;
+        try {
+            TransactionType txType = TransactionType.Payment.ORDINARY;
+            Transaction tx = new Transaction(txType, recipientId, amount, fee, deadline, null, null, passPhrase);
+            txId = broadcastTransaction(tx);
+        } catch (KeyException exc) {
+            throw new NxtException("Unable to sign transaction", exc);
+        }
+        return txId;
+    }
+
+    /**
+     * Set account information
+     *
+     * @param       accountName             Account name (maximum length 100)
+     * @param       accountDescription      Account description (maximum length 1000, may be empty string)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to set account information
+     */
+    public static long setAccountInfo(String accountName, String accountDescription, long fee, int deadline,
+                                byte[] referencedTxHash, String passPhrase) throws NxtException {
+        long txId;
+        try {
+            TransactionType txType = TransactionType.Messaging.ACCOUNT_INFO;
+            AccountInfo attachment = new AccountInfo(accountName, accountDescription);
+            Transaction tx = new Transaction(txType, GENESIS_ACCOUNT_ID, 0, fee, deadline,
+                                referencedTxHash, attachment, passPhrase);
+            txId = broadcastTransaction(tx);
+        } catch (KeyException exc) {
+            throw new NxtException("Unable to sign transaction", exc);
+        }
+        return txId;
+    }
+
+    /**
      * Issue the Nxt API request and return the parsed JSON response
      *
      * @param       requestType             Request type
@@ -407,6 +533,8 @@ public class Nxt {
             conn.setDoInput(true);
             conn.setDoOutput(true);
             conn.setUseCaches(false);
+            conn.setConnectTimeout(nodeConnectTimeout);
+            conn.setReadTimeout(nodeReadTimeout);
             conn.connect();
             try (OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8")) {
                 out.write(request);

@@ -19,7 +19,7 @@ Here are the steps for a manual build.  You will need to install Maven 3 and Jav
 Tutorial
 ========
 
-Refer to the NxtCore Javadoc for a detailed description of the classes and methods.
+Refer to the NxtCore Javadoc for a detailed description of the classes and methods.  The ScripterRon/NxtWallet source code provides examples of how to use the various API methods.
 
 Before any NxtCore function can be used, the library must be initialized.  The Nxt.init() method sets the NRS host name/address (usually "localhost") and the server port (usually 7876).
 
@@ -27,28 +27,17 @@ Before any NxtCore function can be used, the library must be initialized.  The N
 
 To send Nxt, you need to create and broadcast a payment transaction.  NxtCore will create and sign the transaction locally and then send it to the NRS node for broadcast to the network.
 
-    TransactionType txType = TransactionType.Payment.ORDINARY;
-    Transaction tx = new Transaction(txType, sendAddress, sendAmount, sendFee, deadline, null, null, secretPhrase);
-    long txId = Nxt.broadcastTransaction(tx);
+    long txId = Nxt.sendNxt(recipientId, amount, fee, deadline, null, secretPhrase);
     
-To send a message, you need to create and broadcast a messaging transaction.  The message is an arbitrary byte array provided by the application.  NxtCore does not inspect or modify the contents of the message.
+To send a message, you need to create and broadcast a messaging transaction.  The message is an arbitrary byte array provided.  NxtCore does not inspect or modify the contents of the message.
 
-    TransactionType txType = TransactionType.Messaging.ARBITRARY_MESSAGE;
-    Attachment attachment = new ArbitraryMessage(messageBytes);
-    Transaction tx = new Transaction(txType, sendAddress, 0, Nxt.MINIMUM_TX_FEE, deadline, null, attachment, secretPhrase);
-    long txId = Nxt.broadcastTransaction(tx);
+    long txId = Nxt.sendMessage(recipientId, messageBytes, fee, deadline, null, secretPhrase);
 
-To assign an alias, you need to create and broadcast a messaging transaction.  The alias name must consist of letters and numbers with no embedded spaces (leading and trailing spaces will be removed).  The alias URI is an arbitrary string provided by the application.  NxtCore does not inspect or modify the URI.
+To assign an alias, you need to create and broadcast a messaging transaction.  The alias name must consist of letters and numbers with no embedded spaces (leading and trailing spaces will be removed).  The alias URI is an arbitrary string.  NxtCore does not inspect or modify the URI.
 
-    TransactionType txType = TransactionType.Messaging.ALIAS_ASSIGNMENT;
-    Attachment attachment = new AliasAssignment(aliasName, aliasURI);
-    Transaction tx = new Transaction(txType, Nxt.GENESIS_ACCOUNT_ID, 0, Nxt.MINIMUM_TX_FEE, deadline, null, attachment, secretPhrase);
-    long txId = Nxt.broadcastTransaction(tx);
+    long txId = Nxt.assignAlias(aliasName, aliasUri, fee, deadline, null, secretPhrase);
 
 To set the account information, you need to create and broadcast a messaging transaction.
 
-    TransactionType txType = TransactionType.Messaging.ACCOUNT_INFO;
-    Attachment attachment = new AccountInfo(accountName, accountDescription);
-    Transaction tx = new Transaction(txType, Nxt.GENESIS_ACCOUNT_ID, 0, Nxt.MINIMUM_TX_FEE, deadline, null, attachment, secretPhrase);
-    long txId = Nxt.broadcastTransaction(tx);
+    long txId = Nxt.setAccountInfo(accountName, accountDescription, fee, deadline, null, secretPhrase);
 
