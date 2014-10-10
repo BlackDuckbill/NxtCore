@@ -18,17 +18,16 @@ package org.ScripterRon.NxtCore;
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-
 import java.math.BigInteger;
-
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -39,6 +38,9 @@ import java.util.TimeZone;
  * Make API requests to the local Nxt node and return the results
  */
 public class Nxt {
+
+    /** Logger instance */
+    public static final Logger log = LoggerFactory.getLogger("org.ScripterRon.NxtCore");
 
     /** Response container factory */
     private static final ContainerFactory containerFactory = new ResponseFactory();
@@ -81,10 +83,10 @@ public class Nxt {
     public static final int FUNCTION_NOT_AVAILABLE = 9;
 
     /** Nxt node host name */
-    private static String nodeName;
+    private static String nodeName = "localhost";
 
     /** Nxt node API port */
-    private static int nodePort;
+    private static int nodePort = 7876;
 
     /** Connect timeout */
     private static int nodeConnectTimeout = 5000;
@@ -101,6 +103,7 @@ public class Nxt {
     public static void init(String hostName, int apiPort) {
         nodeName = hostName;
         nodePort = apiPort;
+        log.info(String.format("API node=%s, API port=%d", hostName, apiPort));
     }
 
     /**
@@ -116,6 +119,8 @@ public class Nxt {
         nodePort = apiPort;
         nodeConnectTimeout = connectTimeout;
         nodeReadTimeout = readTimeout;
+        log.info(String.format("API node=%s, API port=%d, connect timeout=%d, read timeout=%d",
+                               hostName, apiPort, nodeConnectTimeout, nodeReadTimeout));
     }
 
     /**
@@ -137,6 +142,18 @@ public class Nxt {
             throw new NxtException("Invalid transaction identifier returned for 'broadcastTransaction'", exc);
         }
         return txId;
+    }
+
+    /**
+     * Get an account
+     *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              Account
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static Account getAccount(String accountIdRs) throws IdentifierException, NxtException {
+        return getAccount(Utils.parseAccountRsId(accountIdRs));
     }
 
     /**
@@ -394,6 +411,7 @@ public class Nxt {
             if (tx.getTransactionId() != txId)
                 throw new NxtException("Calculated transaction identifier incorrect for tx "+Utils.idToString(txId));
         } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Unable to create transaction from peer response", exc);
             throw new NxtException("Unable to create transaction from peer response", exc);
         }
         return tx;
@@ -548,6 +566,7 @@ public class Nxt {
                 request = String.format("requestType=%s&%s", requestType, requestParams);
             else
                 request = String.format("requestType=%s", requestType);
+            log.debug(String.format("Issue HTTP request to %s:%d: %s", nodeName, nodePort, request));
             //
             // Issue the request
             //
@@ -602,7 +621,7 @@ public class Nxt {
         /**
          * Create an object container
          *
-         * @return                          PeerResponse object
+         * @return                          PeerResponse
          */
         @Override
         public Map createObjectContainer() {

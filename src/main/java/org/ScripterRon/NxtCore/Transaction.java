@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package org.ScripterRon.NxtCore;
+import static org.ScripterRon.NxtCore.Nxt.log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

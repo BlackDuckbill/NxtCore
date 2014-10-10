@@ -15,6 +15,7 @@
  */
 package org.ScripterRon.NxtCore;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -24,7 +25,7 @@ import java.nio.ByteOrder;
 public class ArbitraryMessage implements Attachment {
 
     /** Message */
-    private final byte[] message;
+    private byte[] message;
 
     /**
      * Create an Arbitrary Message attachment
@@ -40,14 +41,39 @@ public class ArbitraryMessage implements Attachment {
     }
 
     /**
+     * Create an Arbitrary Message attachment
+     *
+     * @param       message                         Message (max 1000 bytes)
+     */
+    public ArbitraryMessage(String message) {
+        if (message == null)
+            throw new IllegalArgumentException("No message specified");
+        if (message.length() > 1000)
+            throw new IllegalArgumentException("Maximum message length is 1000 bytes");
+        try {
+            this.message = message.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException exc) {
+            this.message = new byte[0];
+        }
+    }
+
+    /**
      * Create an Arbitrary Message attachment from the JSON response
      *
-     * @param       response                JSON response
-     * @throws      NumberFormatException   Invalid numeric string
-     * @throws      NxtException            Invalid response
+     * @param       response                        JSON response
+     * @throws      NumberFormatException           Invalid numeric string
+     * @throws      NxtException                    Invalid response
      */
     public ArbitraryMessage(PeerResponse response) throws NumberFormatException, NxtException {
-        this.message = response.getHexString("message");
+        if (response.getBoolean("messageIsText")) {
+            try {
+                message = response.getString("message").getBytes("UTF-8");
+            } catch (UnsupportedEncodingException exc) {
+                message = new byte[0];
+            }
+        } else {
+            message = response.getHexString("message");
+        }
         if (message == null)
             throw new NxtException("No message specified");
     }

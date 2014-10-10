@@ -15,11 +15,11 @@
  */
 package org.ScripterRon.NxtCore;
 
+import org.json.simple.JSONObject;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.json.simple.JSONObject;
 
 /**
  * PeerResponse is used for the JSON-encoded responses returned by the Nxt node
@@ -31,6 +31,9 @@ public class PeerResponse extends JSONObject {
 
     /** Empty long list */
     private static final List<Long> emptyLongList = Collections.emptyList();
+
+    /** Empty object list */
+    private static final List<PeerResponse> emptyObjectList = Collections.emptyList();
 
     /**
      * Create the response object
@@ -140,8 +143,7 @@ public class PeerResponse extends JSONObject {
      */
     public List<Long> getIdList(String key) throws IdentifierException {
         Object value = get(key);
-        if (value == null || !(value instanceof List) || ((List)value).isEmpty() ||
-                                            !(((List)value).get(0) instanceof String))
+        if (value == null || !(value instanceof List) || ((List)value).isEmpty() || !(((List)value).get(0) instanceof String))
             return emptyLongList;
         List<String> stringList = (List<String>)value;
         List<Long> longList = new ArrayList<>(stringList.size());
@@ -183,5 +185,17 @@ public class PeerResponse extends JSONObject {
         Object value = get(key);
         return (value!=null && (value instanceof List) && !((List)value).isEmpty() &&
                 (((List)value).get(0) instanceof String) ? (List<String>)value : emptyStringList);
+    }
+
+    /**
+     * Return a list of JSON objects
+     *
+     * @param       key                     JSON key
+     * @return                              Object list (empty list if key not found)
+     */
+    public List<PeerResponse> getObjectList(String key) {
+        Object value = get(key);
+        return (value!=null && (value instanceof List) && !((List)value).isEmpty() &&
+                (((List)value).get(0) instanceof PeerResponse) ? (List<PeerResponse>)value : emptyObjectList);
     }
 }

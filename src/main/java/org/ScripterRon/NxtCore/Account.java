@@ -15,6 +15,8 @@
  */
 package org.ScripterRon.NxtCore;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -46,29 +48,17 @@ public class Account {
     /** Unconfirmed balance */
     private final long unconfirmedBalance;
 
+    /** Guaranteed balance */
+    private final long guaranteedBalance;
+
     /** Forged balance */
     private final long forgedBalance;
 
-    /** Current lessee */
-    private final long currentLesseeId;
+    /** Asset balances */
+    private final List<AssetBalance> assetBalances;
 
-    /** Current lessee start height */
-    private final int currentLeasingFrom;
-
-    /** Current lessee end height */
-    private final int currentLeasingTo;
-
-    /** Next lessee */
-    private final long nextLesseeId;
-
-    /** Next lessee start height */
-    private final int nextLeasingFrom;
-
-    /** Next lessee end height */
-    private final int nextLeasingTo;
-
-    /** Lessor list */
-    private final List<Long> lessors;
+    /** Unconfirmed asset balances */
+    private final List<AssetBalance> unconfirmedAssetBalances;
 
     /**
      * Create the account from the JSON response for 'getAccount'
@@ -86,14 +76,30 @@ public class Account {
         this.balance = response.getLongString("balanceNQT");
         this.effectiveBalance = response.getLong("effectiveBalanceNXT") * Nxt.NQT_ADJUST;
         this.unconfirmedBalance = response.getLongString("unconfirmedBalanceNQT");
+        this.guaranteedBalance = response.getLongString("guaranteedBalanceNQT");
         this.forgedBalance = response.getLongString("forgedBalanceNQT");
-        this.currentLesseeId = response.getId("currentLessee");
-        this.currentLeasingFrom = response.getInt("currentLeasingHeightFrom");
-        this.currentLeasingTo = response.getInt("currentLeasingHeightTo");
-        this.nextLesseeId = response.getId("nextLessee");
-        this.nextLeasingFrom = response.getInt("nextLeasingHeightFrom");
-        this.nextLeasingTo = response.getInt("nextLeasingHeightTo");
-        this.lessors = response.getIdList("lessors");
+        List<PeerResponse> assetList = response.getObjectList("assetBalances");
+        if (assetList.isEmpty()) {
+            this.assetBalances = Collections.emptyList();
+        } else {
+            this.assetBalances = new ArrayList<>(assetList.size());
+            for (PeerResponse asset : assetList) {
+                long assetId = asset.getId("asset");
+                long assetBalance = asset.getLongString("balanceQNT");
+                assetBalances.add(new AssetBalance(accountId, assetId, assetBalance));
+            }
+        }
+        assetList = response.getObjectList("unconfirmedAssetBalances");
+        if (assetList.isEmpty()) {
+            this.unconfirmedAssetBalances = Collections.emptyList();
+        } else {
+            this.unconfirmedAssetBalances = new ArrayList<>(assetList.size());
+            for (PeerResponse asset : assetList) {
+                long assetId = asset.getId("asset");
+                long assetBalance = asset.getLongString("unconfirmedBalanceQNT");
+                unconfirmedAssetBalances.add(new AssetBalance(accountId, assetId, assetBalance));
+            }
+        }
     }
 
     /**
@@ -179,66 +185,22 @@ public class Account {
     }
 
     /**
-     * Return the current balance lessee
+     * Return the confirmed asset balances
      *
-     * @return                      Account identifier or 0 if the balance is not leased
+     * @return                      Asset balance list
      */
-    public long getCurrentLesseeId() {
-        return currentLesseeId;
+    public List<AssetBalance> getConfirmedAssetBalances() {
+        return assetBalances;
     }
 
     /**
-     * Return the current leasing from block height
+     * Return the total asset balances including unconfirmed assets
      *
-     * @return                      Leasing from block height or 0 if the balance is not leased
+     * @return                      Asset balance list
      */
-    public int getCurrentLeasingFromHeight() {
-        return currentLeasingFrom;
-    }
 
-    /**
-     * Return the current leasing to block height
-     *
-     * @return                      Leasing to block height or 0 if the balance is not leased
-     */
-    public int getCurrentLeasingToHeight() {
-        return currentLeasingTo;
-    }
-
-    /**
-     * Return the next balance lessee
-     *
-     * @return                      Account identifier or 0 if there is no next lessee
-     */
-    public long getNextLesseeId() {
-        return nextLesseeId;
-    }
-
-    /**
-     * Return the next leasing from block height
-     *
-     * @return                      Leasing from block height or 0 if there is no next lessee
-     */
-    public int getNextLeasingFromHeight() {
-        return nextLeasingFrom;
-    }
-
-    /**
-     * Return the next leasing to block height
-     *
-     * @return                      Leasing to block height or 0 if there is no next lessee
-     */
-    public int getNextLeasingToHeight() {
-        return nextLeasingTo;
-    }
-
-    /**
-     * Return the list of balance lessors
-     *
-     * @return                      Balance lessors (an empty list is returned if there are no lessors)
-     */
-    public List<Long> getBalanceLessors() {
-        return lessors;
+    public List<AssetBalance> getAssetBalances() {
+        return unconfirmedAssetBalances;
     }
 
     /**
