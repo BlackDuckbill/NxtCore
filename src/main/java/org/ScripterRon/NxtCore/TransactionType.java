@@ -39,8 +39,12 @@ public abstract class TransactionType {
     public static final byte SUBTYPE_MESSAGING_HUB_ANNOUNCEMENT = 4;
     /** Set account information */
     public static final byte SUBTYPE_MESSAGING_ACCOUNT_INFO = 5;
+    /** Sell alias */
+    public static final byte SUBTYPE_MESSAGING_ALIAS_SELL = 6;
+    /** Buy alias */
+    public static final byte SUBTYPE_MESSAGING_ALIAS_BUY = 7;
 
-    /** Colored coin transaction */
+    /** Colored coin transaction (Asset Exchange) */
     public static final byte TYPE_COLORED_COINS = 2;
     /** Issue asset*/
     public static final byte SUBTYPE_COLORED_COINS_ASSET_ISSUANCE = 0;
@@ -115,6 +119,12 @@ public abstract class TransactionType {
                         break;
                     case SUBTYPE_MESSAGING_ACCOUNT_INFO:
                         txType = Messaging.ACCOUNT_INFO;
+                        break;
+                    case SUBTYPE_MESSAGING_ALIAS_SELL:
+                        txType = Messaging.ALIAS_SELL;
+                        break;
+                    case SUBTYPE_MESSAGING_ALIAS_BUY:
+                        txType = Messaging.ALIAS_BUY;
                         break;
                 }
                 break;
@@ -261,6 +271,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_PAYMENT_ORDINARY_PAYMENT;
             }
+
             /**
              * Return the transaction description
              *
@@ -300,6 +311,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_MESSAGING_ARBITRARY_MESSAGE;
             }
+
             /**
              * Return the transaction description
              *
@@ -364,9 +376,9 @@ public abstract class TransactionType {
         };
 
         /**
-         * Poll creation
+         * Alias buy
          */
-        public static final TransactionType POLL_CREATION = new Messaging() {
+        public static final TransactionType ALIAS_BUY = new Messaging() {
             /**
              * Return the transaction subtype
              *
@@ -374,8 +386,9 @@ public abstract class TransactionType {
              */
             @Override
             public byte getSubtype() {
-                return SUBTYPE_MESSAGING_POLL_CREATION;
+                return SUBTYPE_MESSAGING_ALIAS_BUY;
             }
+
             /**
              * Return the transaction description
              *
@@ -383,7 +396,7 @@ public abstract class TransactionType {
              */
             @Override
             public String getDescription() {
-                return "Poll creation";
+                return "Alias buy";
             }
 
             /**
@@ -397,7 +410,71 @@ public abstract class TransactionType {
              */
             @Override
             public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
-                return new PollCreation(response);
+                return new AliasBuy(response);
+            }
+        };
+
+        /**
+         * Alias sell
+         */
+        public static final TransactionType ALIAS_SELL = new Messaging() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MESSAGING_ALIAS_SELL;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Alias sell";
+            }
+
+            /**
+             * Create an attachment from the JSON response
+             *
+             * @param       response                JSON response
+             * @return                              Attachment
+             * @throws      IdentifierException     Invalid object identifier
+             * @throws      NumberFormatException   Invalid numeric string
+             * @throws      NxtException            Invalid peer response
+             */
+            @Override
+            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
+                return new AliasSell(response);
+            }
+        };
+
+        /**
+         * Poll creation
+         */
+        public static final TransactionType POLL_CREATION = new Messaging() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MESSAGING_POLL_CREATION;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Poll creation";
             }
         };
 
@@ -414,6 +491,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_MESSAGING_VOTE_CASTING;
             }
+
             /**
              * Return the transaction description
              *
@@ -422,20 +500,6 @@ public abstract class TransactionType {
             @Override
             public String getDescription() {
                 return "Vote casting";
-            }
-
-            /**
-             * Create an attachment from the JSON response
-             *
-             * @param       response                JSON response
-             * @return                              Attachment
-             * @throws      IdentifierException     Invalid object identifier
-             * @throws      NumberFormatException   Invalid numeric string
-             * @throws      NxtException            Invalid peer response
-             */
-            @Override
-            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
-                return new VoteCasting(response);
             }
         };
 
@@ -452,6 +516,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_MESSAGING_HUB_ANNOUNCEMENT;
             }
+
             /**
              * Return the transaction description
              *
@@ -476,6 +541,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_MESSAGING_ACCOUNT_INFO;
             }
+
             /**
              * Return the transaction description
              *
@@ -529,6 +595,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_COLORED_COINS_ASSET_ISSUANCE;
             }
+
             /**
              * Return the transaction description
              *
@@ -553,6 +620,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_COLORED_COINS_ASSET_TRANSFER;
             }
+
             /**
              * Return the transaction description
              *
@@ -577,6 +645,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_COLORED_COINS_ASK_ORDER_PLACEMENT;
             }
+
             /**
              * Return the transaction description
              *
@@ -601,6 +670,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_COLORED_COINS_BID_ORDER_PLACEMENT;
             }
+
             /**
              * Return the transaction description
              *
@@ -625,6 +695,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_COLORED_COINS_ASK_ORDER_CANCELLATION;
             }
+
             /**
              * Return the transaction description
              *
@@ -649,6 +720,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_COLORED_COINS_BID_ORDER_CANCELLATION;
             }
+
             /**
              * Return the transaction description
              *
@@ -688,6 +760,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_LISTING;
             }
+
             /**
              * Return the transaction description
              *
@@ -712,6 +785,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_DELISTING;
             }
+
             /**
              * Return the transaction description
              *
@@ -736,6 +810,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_PRICE_CHANGE;
             }
+
             /**
              * Return the transaction description
              *
@@ -760,6 +835,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_QUANTITY_CHANGE;
             }
+
             /**
              * Return the transaction description
              *
@@ -784,6 +860,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_PURCHASE;
             }
+
             /**
              * Return the transaction description
              *
@@ -808,6 +885,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_DELIVERY;
             }
+
             /**
              * Return the transaction description
              *
@@ -832,6 +910,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_FEEDBACK;
             }
+
             /**
              * Return the transaction description
              *
@@ -856,6 +935,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_DIGITAL_GOODS_REFUND;
             }
+
             /**
              * Return the transaction description
              *
@@ -895,6 +975,7 @@ public abstract class TransactionType {
             public byte getSubtype() {
                 return SUBTYPE_ACCOUNT_CONTROL_EFFECTIVE_BALANCE_LEASING;
             }
+
             /**
              * Return the transaction description
              *

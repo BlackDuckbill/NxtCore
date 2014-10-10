@@ -20,9 +20,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Attachment for TransactionType.Messaging.ALIAS_ASSIGNMENT
+ * Attachment for TransactionType.Messaging.ALIAS_SELL
  */
-public class AliasAssignment implements Attachment {
+public class AliasSell implements Attachment {
 
     /** Version */
     private final int version;
@@ -30,40 +30,38 @@ public class AliasAssignment implements Attachment {
     /** Name */
     private final String name;
 
-    /** URI */
-    private final String uri;
+    /** Price */
+    private final long price;
 
     /**
-     * Create an Alias Assignment attachment
+     * Create an Alias Sell attachment
      *
      * @param       name                    Alias name (maximum length 100, alphanumeric characters)
-     * @param       uri                     Alias URI (maximum length 1000, may be empty string)
+     * @param       price                   Sell price (NQT)
      */
-    public AliasAssignment(String name, String uri) {
-        if (name == null || uri == null)
+    public AliasSell(String name, long price) {
+        if (name == null)
             throw new IllegalArgumentException("Required parameter not specified");
         this.version = 1;
         this.name = name.trim();
-        this.uri = uri.trim();
+        this.price = price;
         if (this.name.isEmpty())
             throw new IllegalArgumentException("Alias name not specified");
         if (this.name.length() > 100)
             throw new IllegalArgumentException("Maximum alias name length is 100");
-        if (this.uri.length() > 1000)
-            throw new IllegalArgumentException("Maximum alias URI length is 1000");
         if (!this.name.matches("\\p{Alnum}*"))
             throw new IllegalArgumentException("Alias name must consist of only alphanumeric characters");
     }
 
     /**
-     * Create an Alias Assignment attachment from the JSON response
+     * Create an Alias Sell attachment from the JSON response
      *
      * @param       response                JSON response
      */
-    public AliasAssignment(PeerResponse response) {
-        this.version = response.getByte("version.AliasAssignment");
+    public AliasSell(PeerResponse response) {
+        this.version = response.getByte("version.AliasSell");
         this.name = response.getString("alias");
-        this.uri = response.getString("uri");
+        this.price = response.getLong("priceNQT");
     }
 
     /**
@@ -76,16 +74,14 @@ public class AliasAssignment implements Attachment {
         byte[] bytes;
         try {
             byte[] nameBytes = name.getBytes("UTF-8");
-            byte[] uriBytes = uri.getBytes("UTF-8");
-            bytes = new byte[(version>0?1:0)+1+nameBytes.length+2+uriBytes.length];
+            bytes = new byte[(version>0?1:0)+1+nameBytes.length+8];
             ByteBuffer buf = ByteBuffer.wrap(bytes);
             buf.order(ByteOrder.LITTLE_ENDIAN);
             if (version > 0)
                 buf.put((byte)version);
             buf.put((byte)nameBytes.length);
             buf.put(nameBytes);
-            buf.putShort((short)uriBytes.length);
-            buf.put(uriBytes);
+            buf.putLong(price);
         } catch (UnsupportedEncodingException exc) {
             throw new RuntimeException(exc.getClass().getName()+": "+exc.getMessage());
         }
@@ -111,11 +107,11 @@ public class AliasAssignment implements Attachment {
     }
 
     /**
-     * Return the alias URI
+     * Return the sell price
      *
-     * @return                              Alias URI
+     * @return                              Alias price
      */
-    public String getURI() {
-        return uri;
+    public long getPrice() {
+        return price;
     }
 }

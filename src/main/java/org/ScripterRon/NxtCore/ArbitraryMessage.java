@@ -20,9 +20,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Arbitrary Message attachment for TransactionType.Messaging.ARBITRARY_MESSAGE
+ * Attachment for TransactionType.Messaging.ARBITRARY_MESSAGE
  */
 public class ArbitraryMessage implements Attachment {
+
+    /** Version */
+    private final int version = 0;
 
     /** Message */
     private byte[] message;
@@ -100,6 +103,15 @@ public class ArbitraryMessage implements Attachment {
         buf.putInt(message.length | (textMessage ? 0x8000000 : 0));
         buf.put(message);
         return bytes;
+    }
+
+    /**
+     * Return the attachment version
+     *
+     * @return                              Version
+     */
+    public int getVersion() {
+        return version;
     }
 
     /**
