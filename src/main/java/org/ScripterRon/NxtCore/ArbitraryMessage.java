@@ -27,6 +27,9 @@ public class ArbitraryMessage implements Attachment {
     /** Message */
     private byte[] message;
 
+    /** Text message */
+    private boolean textMessage;
+
     /**
      * Create an Arbitrary Message attachment
      *
@@ -38,6 +41,7 @@ public class ArbitraryMessage implements Attachment {
         if (message.length > 1000)
             throw new IllegalArgumentException("Maximum message length is 1000 bytes");
         this.message = message;
+        this.textMessage = false;
     }
 
     /**
@@ -52,8 +56,10 @@ public class ArbitraryMessage implements Attachment {
             throw new IllegalArgumentException("Maximum message length is 1000 bytes");
         try {
             this.message = message.getBytes("UTF-8");
+            this.textMessage = true;
         } catch (UnsupportedEncodingException exc) {
             this.message = new byte[0];
+            this.textMessage = false;
         }
     }
 
@@ -68,14 +74,17 @@ public class ArbitraryMessage implements Attachment {
         if (response.getBoolean("messageIsText")) {
             try {
                 message = response.getString("message").getBytes("UTF-8");
+                textMessage = true;
             } catch (UnsupportedEncodingException exc) {
                 message = new byte[0];
+                textMessage = false;
             }
         } else {
             message = response.getHexString("message");
+            if (message == null)
+                message = new byte[0];
+            textMessage = false;
         }
-        if (message == null)
-            throw new NxtException("No message specified");
     }
 
     /**
@@ -88,7 +97,7 @@ public class ArbitraryMessage implements Attachment {
         byte[] bytes = new byte[4+message.length];
         ByteBuffer buf = ByteBuffer.wrap(bytes);
         buf.order(ByteOrder.LITTLE_ENDIAN);
-        buf.putInt(message.length);
+        buf.putInt(message.length | (textMessage ? 0x8000000 : 0));
         buf.put(message);
         return bytes;
     }
@@ -100,5 +109,14 @@ public class ArbitraryMessage implements Attachment {
      */
     public byte[] getMessage() {
         return message;
+    }
+
+    /**
+     * Check if this is a text message
+     *
+     * @return                              TRUE if this is a text message
+     */
+    public boolean isTextMessage() {
+        return textMessage;
     }
 }
