@@ -27,9 +27,6 @@ public class Account {
     /** Account identifier */
     private final long accountId;
 
-    /** Reed-Solomon identifier */
-    private final String accountRsId;
-
     /** Name */
     private final String name;
 
@@ -60,6 +57,27 @@ public class Account {
     /** Unconfirmed asset balances */
     private final List<AssetBalance> unconfirmedAssetBalances;
 
+    /** Current lessee */
+    private final long currentLesseeId;
+
+    /** Current lessee start height */
+    private final int currentLeasingFrom;
+
+    /** Current lessee end height */
+    private final int currentLeasingTo;
+
+    /** Next lessee */
+    private final long nextLesseeId;
+
+    /** Next lessee start height */
+    private final int nextLeasingFrom;
+
+    /** Next lessee end height */
+    private final int nextLeasingTo;
+
+    /** Lessor list */
+    private final List<Long> lessors;
+
     /**
      * Create the account from the JSON response for 'getAccount'
      *
@@ -69,7 +87,6 @@ public class Account {
      */
     public Account(PeerResponse response) throws IdentifierException, NumberFormatException {
         this.accountId = response.getId("account");
-        this.accountRsId = response.getString("accountRS");
         this.name = response.getString("name");
         this.description = response.getString("description");
         this.publicKey = response.getHexString("publicKey");
@@ -78,6 +95,13 @@ public class Account {
         this.unconfirmedBalance = response.getLongString("unconfirmedBalanceNQT");
         this.guaranteedBalance = response.getLongString("guaranteedBalanceNQT");
         this.forgedBalance = response.getLongString("forgedBalanceNQT");
+        this.currentLesseeId = response.getId("currentLessee");
+        this.currentLeasingFrom = response.getInt("currentLeasingHeightFrom");
+        this.currentLeasingTo = response.getInt("currentLeasingHeightTo");
+        this.nextLesseeId = response.getId("nextLessee");
+        this.nextLeasingFrom = response.getInt("nextLeasingHeightFrom");
+        this.nextLeasingTo = response.getInt("nextLeasingHeightTo");
+        this.lessors = response.getIdList("lessors");
         List<PeerResponse> assetList = response.getObjectList("assetBalances");
         if (assetList.isEmpty()) {
             this.assetBalances = Collections.emptyList();
@@ -117,7 +141,7 @@ public class Account {
      * @return                      Account Reed-Solomon identifier
      */
     public String getAccountRsId() {
-        return accountRsId;
+        return Utils.getAccountRsId(accountId);
     }
 
     /**
@@ -182,6 +206,87 @@ public class Account {
      */
     public long getForgedBalance() {
         return forgedBalance;
+    }
+
+    /**
+     * Return the current balance lessee account identifier
+     *
+     * @return                      Account identifier or 0 if no current lessee
+     */
+    public long getCurrentLesseeId() {
+        return currentLesseeId;
+    }
+
+    /**
+     * Return the current balance lessee account Reed-Solomon identifier
+     *
+     * @return                      Account identifier or an empty string if no current lessee
+     */
+    public String getCurrentLesseeRsId() {
+        return (currentLesseeId!=0 ? Utils.getAccountRsId(currentLesseeId) : "");
+    }
+
+    /**
+     * Return the current 'leasing from' block height
+     *
+     * @return                      Block height or 0 if no current lessee
+     */
+    public int getCurrentLeasingFromHeight() {
+        return currentLeasingFrom;
+    }
+
+    /**
+     * Return the current 'leasing to' block height
+     *
+     * @return                      Block height of 0 if no current lessee
+     */
+    public int getCurrentLeasingToHeight() {
+        return currentLeasingTo;
+    }
+
+    /**
+     * Return the next balance lessee account identifier
+     *
+     * @return                      Account identifier or 0 if no next lessee
+     */
+    public long getNextLesseeId() {
+        return nextLesseeId;
+    }
+
+    /**
+     * Return the next balance lessee account Reed-Solomon identifier
+     *
+     * @return                      Account identifier or an empty string if no next leasee
+     */
+    public String getNextLesseeRsId() {
+        return (nextLesseeId!=0 ? Utils.getAccountRsId(nextLesseeId) : "");
+    }
+
+    /**
+     * Return the next 'leasing from' block height
+     *
+     * @return                      Block height or 0 if no next lessee
+     */
+    public int getNextLeasingFromHeight() {
+        return nextLeasingFrom;
+    }
+
+    /**
+     * Return the next 'leasing to' block height
+     *
+     * @return                      Block height or 0 if no next lessee
+     */
+    public int getNextLeasingToHeight() {
+        return nextLeasingTo;
+    }
+
+    /**
+     * Return the list of balance lessors
+     *
+     * @return                      Balance lessors (an empty list is returned if there are no lessors)
+     */
+    public List<Long> getBalanceLessors() {
+        return lessors;
     }
 
     /**

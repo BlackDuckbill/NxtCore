@@ -414,6 +414,9 @@ public class Nxt {
     /**
      * Get the current node state
      *
+     * NOTE: getNodeState() can take a long time to complete due to the database summary information that is returned.
+     * You should use getChainState() instead if you don't need the extra information.
+     *
      * @return                              Node state
      * @throws      NxtException            Unable to issue Nxt API request
      */
