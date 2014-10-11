@@ -31,9 +31,6 @@ public class Block {
     /** Block identifier */
     private final long blockId;
 
-    /** Block hash */
-    private final byte[] blockHash;
-
     /** Generator identifier */
     private final long generatorId;
 
@@ -45,9 +42,6 @@ public class Block {
 
     /** Previous block identifier */
     private final long previousBlockId;
-
-    /** Previous block hash */
-    private final byte[] previousBlockHash;
 
     /** Next block identifier */
     private final long nextBlockId;
@@ -95,10 +89,8 @@ public class Block {
      */
     public Block(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
         this.version = response.getInt("version");
-        if (version > 3)
-            throw new NxtException(String.format("Block version %d is not supported", version));
+        this.blockId = response.getId("block");
         this.previousBlockId = response.getId("previousBlock");
-        this.previousBlockHash = response.getHexString("previousBlockHash");
         this.nextBlockId = response.getId("nextBlock");
         this.totalAmount = response.getLongString("totalAmountNQT");
         this.totalFee = response.getLongString("totalFeeNQT");
@@ -114,43 +106,6 @@ public class Block {
         this.baseTarget = response.getLong("baseTarget");
         this.txCount = response.getInt("numberOfTransactions");
         this.txList = response.getIdList("transactions");
-        //
-        // Calculate the block identifier and the block hash
-        //
-        blockHash = Crypto.singleDigest(getBytes(false));
-        blockId = Utils.fullHashToId(blockHash);
-    }
-
-    /**
-     * Get the block byte stream
-     *
-     * @param       excludeSignature        TRUE to exclude the block signature
-     * @return                              Byte stream
-     */
-    public final byte[] getBytes(boolean excludeSignature) {
-        byte[] bytes = new byte[152 + (version>=3 ? 16 : 8) + (excludeSignature ? 0 : 64)];
-        ByteBuffer buf = ByteBuffer.wrap(bytes);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        buf.putInt(version);
-        buf.putInt(timestamp);
-        buf.putLong(previousBlockId);
-        buf.putInt(txCount);
-        if (version >= 3) {                                         // 8-byte NQT values for version >= 3
-            buf.putLong(totalAmount);
-            buf.putLong(totalFee);
-        } else {                                                    // 4-byte NXT values for version < 3
-            buf.putInt((int)(totalAmount/Nxt.NQT_ADJUST));
-            buf.putInt((int)(totalFee/Nxt.NQT_ADJUST));
-        }
-        buf.putInt(payloadLength);
-        buf.put(payloadHash);
-        buf.put(generatorPublicKey);
-        buf.put(generationSignature);                               // Version 1 is 64 bytes, otherwise 32 bytes
-        if (version > 1)                                            // Previous block hash added in version 2
-            buf.put(previousBlockHash!=null ? previousBlockHash : new byte[32]);
-        if (!excludeSignature)
-            buf.put(blockSignature);
-        return bytes;
     }
 
     /**
@@ -181,15 +136,6 @@ public class Block {
     }
 
     /**
-     * Return the block hash
-     *
-     * @return                      Block hash
-     */
-    public byte[] getBlockHash() {
-        return blockHash;
-    }
-
-    /**
      * Return the next block identifier
      *
      * @return                      Next block identifier or 0 if there is no next block
@@ -205,15 +151,6 @@ public class Block {
      */
     public long getPreviousBlockId() {
         return previousBlockId;
-    }
-
-    /**
-     * Return the previous block hash
-     *
-     * @return                      Previous block hash or null if there is no previous block
-     */
-    public byte[] getPreviousBlockHash() {
-        return previousBlockHash;
     }
 
     /**

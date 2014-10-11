@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package org.ScripterRon.NxtCore;
-import static org.ScripterRon.NxtCore.Nxt.log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -23,6 +22,24 @@ import java.nio.ByteOrder;
  * Transaction represents a transaction in a block
  */
 public class Transaction {
+
+    /** Zero hash */
+    private static final byte[] nullHash = new byte[32];
+
+    /** Zero signature */
+    private static final byte[] nullSignature = new byte[64];
+
+    /** Transaction version */
+    private final long version;
+
+    /** Transaction flags */
+    private final int flags = 0;
+
+    /** EC block identifier */
+    private final long ecBlockId;
+
+    /** EC block height */
+    private final int ecBlockHeight;
 
     /** Transaction identifier */
     private final long txId;
@@ -97,14 +114,19 @@ public class Transaction {
         if (txType == null)
             throw new NxtException(String.format("Transaction type %d subtype %d is not supported",
                                                  response.getByte("type"), response.getByte("subtype")));
+        version = response.getByte("version");
         txId = response.getId("transaction");
         txHash = response.getHexString("fullHash");
         amount = response.getLongString("amountNQT");
         fee = response.getLongString("feeNQT");
         senderId = response.getId("sender");
         senderRsId = response.getString("senderRS");
-        recipientId = response.getId("recipient");
-        recipientRsId = response.getString("recipientRS");
+        long recipient = response.getId("recipient");
+        if (recipient != 0)
+            recipientId = recipient;
+        else
+            recipientId = Nxt.GENESIS_ACCOUNT_ID;
+        recipientRsId = Utils.getAccountRsId(recipientId);
         timestamp = response.getInt("timestamp");
         deadline = response.getInt("deadline");
         referencedTxHash = response.getHexString("referencedTransactionFullHash");
@@ -123,6 +145,13 @@ public class Transaction {
             height = -1;
             confirmations = -1;
         }
+        if (version > 0) {
+            ecBlockId = response.getId("ecBlockId");
+            ecBlockHeight = response.getInt("ecBlockHeight");
+        } else {
+            ecBlockId = 0;
+            ecBlockHeight = 0;
+        }
         PeerResponse attachmentResponse = (PeerResponse)response.get("attachment");
         if (attachmentResponse != null)
             attachment = txType.loadAttachment(attachmentResponse);
@@ -140,14 +169,16 @@ public class Transaction {
      * @param       deadline                Transaction deadline (max 1440 minutes)
      * @param       referencedTxHash        Referenced transaction hash or null
      * @param       attachment              Transaction attachment or null
+     * @param       ecBlock                 Economic clustering block
      * @param       passPhrase              Sender secret phrase
      * @throws      KeyException            Unable to perform cryptographic operation
      */
     public Transaction(TransactionType txType, long recipientId, long amount, long fee,
                                     int deadline, byte[] referencedTxHash, Attachment attachment,
-                                    String passPhrase) throws KeyException {
+                                    EcBlock ecBlock, String passPhrase) throws KeyException {
         if (deadline > 1440)
             throw new IllegalArgumentException("Maximum deadline is 1440 minutes");
+        this.version = 1;
         this.txType = txType;
         this.senderPublicKey = Crypto.getPublicKey(passPhrase);
         this.senderId = Utils.getAccountId(senderPublicKey);
@@ -160,6 +191,8 @@ public class Transaction {
         this.deadline = deadline;
         this.timestamp = (int)((System.currentTimeMillis()+500)/1000 - Nxt.GENESIS_TIMESTAMP);
         this.attachment = attachment;
+        this.ecBlockId = ecBlock.getBlockId();
+        this.ecBlockHeight = ecBlock.getHeight();
         this.blockId = 0;
         this.blockTimestamp = 0;
         this.height = -1;
@@ -188,7 +221,7 @@ public class Transaction {
      * @return                              Transaction bytes or null
      */
     public final byte[] getBytes(boolean zeroSignature) {
-        int baseLength = 160;
+        int baseLength = 160 + (version>0 ? 16 : 0);
         int txLength;
         byte[] attachmentBytes;
         if (attachment != null) {
@@ -202,7 +235,7 @@ public class Transaction {
         ByteBuffer txBuffer = ByteBuffer.wrap(txBytes);
         txBuffer.order(ByteOrder.LITTLE_ENDIAN);
         txBuffer.put((txType.getType()));
-        txBuffer.put(txType.getSubtype());
+        txBuffer.put((byte)(txType.getSubtype()|(version<<4)));
         txBuffer.putInt(timestamp);
         txBuffer.putShort((short)deadline);
         txBuffer.put(senderPublicKey);
@@ -211,8 +244,17 @@ public class Transaction {
         txBuffer.putLong(fee);
         if (referencedTxHash != null)
             txBuffer.put(referencedTxHash);
+        else
+            txBuffer.put(nullHash);
         if (!zeroSignature)
-            System.arraycopy(signature, 0, txBytes, baseLength-64, 64);
+            txBuffer.put(signature);
+        else
+            txBuffer.put(nullSignature);
+        if (version > 0) {
+            txBuffer.putInt(flags);
+            txBuffer.putInt(ecBlockHeight);
+            txBuffer.putLong(ecBlockId);
+        }
         if (attachmentBytes != null)
             System.arraycopy(attachmentBytes, 0, txBytes, baseLength, attachmentBytes.length);
         return txBytes;
@@ -424,6 +466,24 @@ public class Transaction {
      */
     public int getConfirmations() {
         return confirmations;
+    }
+
+    /**
+     * Return the EC block identifier
+     *
+     * @return                              EC block identifier
+     */
+    public long getEcBlockId() {
+        return ecBlockId;
+    }
+
+    /**
+     * Return the EC block height
+     *
+     * @return                              EC block height
+     */
+    public int getEcBlockHeight() {
+        return ecBlockHeight;
     }
 
     /**

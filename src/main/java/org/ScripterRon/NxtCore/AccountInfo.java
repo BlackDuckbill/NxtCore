@@ -19,13 +19,15 @@ import java.io.UnsupportedEncodingException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
 import java.util.List;
 
 /**
  * Account information attachment for TransactionType.Messaging.ACCOUNT_INFO
  */
 public class AccountInfo implements Attachment {
+
+    /** Attachment version */
+    private final int version;
 
     /** Account name */
     private final String name;
@@ -42,6 +44,7 @@ public class AccountInfo implements Attachment {
     public AccountInfo(String name, String description) {
         if (name == null || description == null)
             throw new IllegalArgumentException("Required parameter not specified");
+        this.version = 1;
         this.name = name.trim();
         if (this.name.length() > 100)
             throw new IllegalArgumentException("Maximum account name length is 100 characters");
@@ -58,6 +61,7 @@ public class AccountInfo implements Attachment {
      * @throws      NxtException            Invalid response
      */
     public AccountInfo(PeerResponse response) throws IdentifierException, NxtException {
+        this.version = response.getByte("version.AccountInfo");
         this.name = response.getString("name");
         this.description = response.getString("description");
     }
@@ -73,9 +77,11 @@ public class AccountInfo implements Attachment {
         try {
             byte[] nameBytes = name.getBytes("UTF-8");
             byte[] descBytes = description.getBytes("UTF-8");
-            bytes = new byte[1+nameBytes.length+2+descBytes.length];
+            bytes = new byte[(version>0?1:0)+1+nameBytes.length+2+descBytes.length];
             ByteBuffer buf = ByteBuffer.wrap(bytes);
             buf.order(ByteOrder.LITTLE_ENDIAN);
+            if (version > 0)
+                buf.put((byte)version);
             buf.put((byte)nameBytes.length);
             buf.put(nameBytes);
             buf.putShort((short)descBytes.length);
@@ -84,6 +90,15 @@ public class AccountInfo implements Attachment {
             throw new RuntimeException(exc.getClass().getName()+": "+exc.getMessage());
         }
         return bytes;
+    }
+
+    /**
+     * Return the attachment version
+     *
+     * @return                              Version
+     */
+    public int getVersion() {
+        return version;
     }
 
     /**

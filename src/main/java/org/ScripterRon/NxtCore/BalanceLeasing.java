@@ -23,6 +23,9 @@ import java.nio.ByteOrder;
  */
 public class BalanceLeasing implements Attachment {
 
+    /** Attachment version */
+    private final int version;
+
     /** Leasing period */
     private final int period;
 
@@ -35,6 +38,7 @@ public class BalanceLeasing implements Attachment {
         if (period < 1440 || period > 32767)
             throw new IllegalArgumentException("Leasing period must be between 1440 and 32767");
         this.period = period;
+        this.version = 1;
     }
 
     /**
@@ -43,6 +47,7 @@ public class BalanceLeasing implements Attachment {
      * @param       response                JSON response
      */
     public BalanceLeasing(PeerResponse response) {
+        this.version = response.getByte("version.EffectiveBalanceLeasing");
         this.period = response.getInt("period");
     }
 
@@ -53,11 +58,22 @@ public class BalanceLeasing implements Attachment {
      */
     @Override
     public byte[] getBytes() {
-        byte[] bytes = new byte[2];
+        byte[] bytes = new byte[(version>0?1:0)+2];
         ByteBuffer buf = ByteBuffer.wrap(bytes);
         buf.order(ByteOrder.LITTLE_ENDIAN);
+        if (version > 0)
+            buf.put((byte)version);
         buf.putShort((short)period);
         return bytes;
+    }
+
+    /**
+     * Return the attachment version
+     *
+     * @return                              Version
+     */
+    public int getVersion() {
+        return version;
     }
 
     /**

@@ -65,6 +65,12 @@ public class Nxt {
     /** Minimum transaction fee */
     public static final long MINIMUM_TX_FEE = 1 * NQT_ADJUST;
 
+    /** Maximum block timestamp distance (seconds) */
+    private static final int EC_RULE_TERMINATOR = 600;
+
+    /** Maximum block height distance */
+    private static final int EC_BLOCK_DISTANCE_LIMIT = 60;
+
     /** Incorrect request error */
     public static final int INCORRECT_REQUEST = 1;
     /** Missing parameter error */
@@ -139,6 +145,7 @@ public class Nxt {
             if (txId != tx.getTransactionId())
                 throw new NxtException("Incorrect transaction identifier returned for 'broadcastTransaction'");
         } catch (IdentifierException exc) {
+            log.error("Invalid transaction identifier returned for 'broadcastTransaction'", exc);
             throw new NxtException("Invalid transaction identifier returned for 'broadcastTransaction'", exc);
         }
         return txId;
@@ -171,6 +178,7 @@ public class Nxt {
             if (account.getAccountId() != accountId)
                 throw new NxtException("Incorrect account returned for 'getAccount'");
         } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid account data returned for 'getAccount'", exc);
             throw new NxtException("Invalid account data returned for 'getAccount'", exc);
         }
         return account;
@@ -191,6 +199,7 @@ public class Nxt {
             if (Utils.getAccountId(publicKey) != accountId)
                 throw new NxtException("Incorrect public key return for 'getAccountPublicKey");
         } catch (NumberFormatException exc) {
+            log.error("Invalid public key returned for 'getAccountPublicKey'", exc);
             throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
         }
         return publicKey;
@@ -209,6 +218,7 @@ public class Nxt {
             PeerResponse response = issueRequest("getAccountBlockIds", "account="+Utils.idToString(accountId));
             blockList = response.getIdList("blockIds");
         } catch (IdentifierException exc) {
+            log.error("Invalid block identifier returned for 'getAccountBlockIds'", exc);
             throw new NxtException("Invalid block identifier returned for 'getAccountBlockIds'", exc);
         }
         return blockList;
@@ -227,6 +237,7 @@ public class Nxt {
             PeerResponse response = issueRequest("getAccountTransactionIds", "account="+Utils.idToString(accountId));
             txList = response.getIdList("transactionIds");
         } catch (IdentifierException exc) {
+            log.error("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
             throw new NxtException("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
         }
         return txList;
@@ -245,6 +256,7 @@ public class Nxt {
             PeerResponse response = issueRequest("getUnconfirmedTransactionIds", "account="+Utils.idToString(accountId));
             txList = response.getIdList("unconfirmedTransactionIds");
         } catch (IdentifierException exc) {
+            log.error("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
             throw new NxtException("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
         }
         return txList;
@@ -285,6 +297,7 @@ public class Nxt {
             if (alias.getAliasId() != aliasId)
                 throw new NxtException("Incorrect alias returned for 'getAlias' request");
         } catch (IdentifierException exc) {
+            log.error("Invalid alias data returned for 'getAlias'", exc);
             throw new NxtException("Invalid alias data returned for 'getAlias'", exc);
         }
         return alias;
@@ -305,6 +318,7 @@ public class Nxt {
             if (!alias.getAliasName().equals(aliasName))
                 throw new NxtException("Incorrect alias returned for 'getAlias' request");
         } catch (IdentifierException exc) {
+            log.error("Invalid alias data returned for 'getAlias'", exc);
             throw new NxtException("Invalid alias data returned for 'getAlias'", exc);
         }
         return alias;
@@ -337,6 +351,7 @@ public class Nxt {
                 }
             }
         } catch (IdentifierException exc) {
+            log.error("Invalid alias data returned for 'getAliases'", exc);
             throw new NxtException("Invalid alias data returned for 'getAliases'", exc);
         }
         return aliasList;
@@ -357,9 +372,43 @@ public class Nxt {
             if (block.getBlockId() != blockId)
                 throw new NxtException("Calculated block identifier incorrect for block "+Utils.idToString(blockId));
         } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid block data returned for 'getBlock'", exc);
             throw new NxtException("Invalid block data returned for 'getBlock'", exc);
         }
         return block;
+    }
+
+    /**
+     * Get the Economic Clustering block
+     *
+     * The EC block is determined by working backwards from the last block in the chain.  Thus, there will
+     * be a different EC block each time a new block is added to the chain.
+     *
+     * @return                              EC block
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static EcBlock getEcBlock() throws NxtException {
+        long blockId;
+        int blockHeight;
+        try {
+            PeerResponse response = issueRequest("getBlockchainStatus", null);
+            response = issueRequest("getBlock", "block="+response.getString("lastBlock"));
+            blockId = response.getId("block");
+            blockHeight = response.getInt("height");
+            int blockTime = response.getInt("timestamp");
+            int minHeight = Math.max(blockHeight-EC_BLOCK_DISTANCE_LIMIT, 0);
+            int minTime = (int)(System.currentTimeMillis()/1000-GENESIS_TIMESTAMP)-EC_RULE_TERMINATOR;
+            while (blockTime>minTime && blockHeight>minHeight) {
+                blockHeight--;
+                response = issueRequest("getBlock", "block="+response.getString("previousBlock"));
+                blockId = response.getId("block");
+                blockTime = response.getInt("timestamp");
+            }
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid block data returned", exc);
+            throw new NxtException("Invalid block data returned");
+        }
+        return new EcBlock(blockId, blockHeight);
     }
 
     /**
@@ -374,6 +423,7 @@ public class Nxt {
             PeerResponse response = issueRequest("getState", null);
             nodeState = new NodeState(response);
         } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid state data returned for 'getState'", exc);
             throw new NxtException("Invalid state data returned for 'getState'", exc);
         }
         return nodeState;
@@ -391,6 +441,7 @@ public class Nxt {
             PeerResponse response = issueRequest("getBlockchainStatus", null);
             chainState = new ChainState(response);
         } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid data returned for 'getBlockchainStatus'", exc);
             throw new NxtException("Invalid state data returned for 'getBlockchainStatus'", exc);
         }
         return chainState;
@@ -435,9 +486,12 @@ public class Nxt {
         try {
             TransactionType txType = TransactionType.Messaging.ALIAS_ASSIGNMENT;
             AliasAssignment attachment = new AliasAssignment(aliasName, aliasUri);
-            Transaction tx = new Transaction(txType, GENESIS_ACCOUNT_ID, 0, fee, deadline, null, attachment, passPhrase);
+            EcBlock ecBlock = getEcBlock();
+            Transaction tx = new Transaction(txType, GENESIS_ACCOUNT_ID, 0, fee, deadline, null, attachment,
+                                            ecBlock, passPhrase);
             txId = Nxt.broadcastTransaction(tx);
         } catch (KeyException exc) {
+            log.error("Unable to sign transaction", exc);
             throw new NxtException("Unable to sign transaction", exc);
         }
         return txId;
@@ -461,9 +515,12 @@ public class Nxt {
         try {
             TransactionType txType = TransactionType.AccountControl.EFFECTIVE_BALANCE_LEASING;
             BalanceLeasing attachment = new BalanceLeasing(period);
-            Transaction tx = new Transaction(txType, recipientId, 0, fee, deadline, null, attachment, passPhrase);
+            EcBlock ecBlock = getEcBlock();
+            Transaction tx = new Transaction(txType, recipientId, 0, fee, deadline, null, attachment,
+                                            ecBlock, passPhrase);
             txId = Nxt.broadcastTransaction(tx);
         } catch (KeyException exc) {
+            log.error("Unable to sign transaction", exc);
             throw new NxtException("Unable to sign transaction", exc);
         }
         return txId;
@@ -487,9 +544,12 @@ public class Nxt {
         try {
             TransactionType txType = TransactionType.Messaging.ARBITRARY_MESSAGE;
             ArbitraryMessage attachment = new ArbitraryMessage(message);
-            Transaction tx = new Transaction(txType, recipientId, 0, fee, deadline, null, attachment, passPhrase);
+            EcBlock ecBlock = getEcBlock();
+            Transaction tx = new Transaction(txType, recipientId, 0, fee, deadline, null, attachment,
+                                            ecBlock, passPhrase);
             txId = Nxt.broadcastTransaction(tx);
         } catch (KeyException exc) {
+            log.error("Unable to sign transaction", exc);
             throw new NxtException("Unable to sign transaction", exc);
         }
         return txId;
@@ -512,9 +572,12 @@ public class Nxt {
         long txId;
         try {
             TransactionType txType = TransactionType.Payment.ORDINARY;
-            Transaction tx = new Transaction(txType, recipientId, amount, fee, deadline, null, null, passPhrase);
+            EcBlock ecBlock = getEcBlock();
+            Transaction tx = new Transaction(txType, recipientId, amount, fee, deadline, null, null,
+                                            ecBlock, passPhrase);
             txId = broadcastTransaction(tx);
         } catch (KeyException exc) {
+            log.error("Unable to sign transaction", exc);
             throw new NxtException("Unable to sign transaction", exc);
         }
         return txId;
@@ -538,10 +601,12 @@ public class Nxt {
         try {
             TransactionType txType = TransactionType.Messaging.ACCOUNT_INFO;
             AccountInfo attachment = new AccountInfo(accountName, accountDescription);
+            EcBlock ecBlock = getEcBlock();
             Transaction tx = new Transaction(txType, GENESIS_ACCOUNT_ID, 0, fee, deadline,
-                                referencedTxHash, attachment, passPhrase);
+                                            referencedTxHash, attachment, ecBlock, passPhrase);
             txId = broadcastTransaction(tx);
         } catch (KeyException exc) {
+            log.error("Unable to sign transaction", exc);
             throw new NxtException("Unable to sign transaction", exc);
         }
         return txId;
@@ -601,6 +666,7 @@ public class Nxt {
                                            errorCode, requestType, errorDesc), errorCode.intValue());
                 }
             }
+            log.debug("Request complete");
         } catch (MalformedURLException exc) {
             throw new NxtException("Malformed Nxt API URL", exc);
         } catch (ParseException exc) {
