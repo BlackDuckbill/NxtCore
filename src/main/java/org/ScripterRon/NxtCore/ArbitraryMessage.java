@@ -22,10 +22,10 @@ import java.nio.ByteOrder;
 /**
  * Attachment for TransactionType.Messaging.ARBITRARY_MESSAGE
  */
-public class ArbitraryMessage implements Attachment {
+public class ArbitraryMessage extends AbstractAttachment {
 
     /** Version */
-    private final int version = 0;
+    private final int version;
 
     /** Message */
     private byte[] message;
@@ -43,6 +43,7 @@ public class ArbitraryMessage implements Attachment {
             throw new IllegalArgumentException("No message specified");
         if (message.length > 1000)
             throw new IllegalArgumentException("Maximum message length is 1000 bytes");
+        this.version = 1;
         this.message = message;
         this.textMessage = false;
     }
@@ -64,6 +65,7 @@ public class ArbitraryMessage implements Attachment {
             this.message = new byte[0];
             this.textMessage = false;
         }
+        this.version = 1;
     }
 
     /**
@@ -74,6 +76,7 @@ public class ArbitraryMessage implements Attachment {
      * @throws      NxtException                    Invalid response
      */
     public ArbitraryMessage(PeerResponse response) throws NumberFormatException, NxtException {
+        version = response.getByte("version.Message");
         if (response.getBoolean("messageIsText")) {
             try {
                 message = response.getString("message").getBytes("UTF-8");
@@ -91,16 +94,28 @@ public class ArbitraryMessage implements Attachment {
     }
 
     /**
+     * Return the transaction flags
+     *
+     * @return                              Transaction flags
+     */
+    @Override
+    public int getFlags() {
+        return (version>0 ? Transaction.TX_MESSAGE : 0);
+    }
+
+    /**
      * Return the attachment byte stream
      *
      * @return                              Byte stream
      */
     @Override
     public byte[] getBytes() {
-        byte[] bytes = new byte[4+message.length];
+        byte[] bytes = new byte[(version>0?1:0)+4+message.length];
         ByteBuffer buf = ByteBuffer.wrap(bytes);
         buf.order(ByteOrder.LITTLE_ENDIAN);
-        buf.putInt(message.length | (textMessage ? 0x8000000 : 0));
+        if (version > 0)
+            buf.put((byte)version);
+        buf.putInt(message.length | (textMessage ? 0x80000000 : 0));
         buf.put(message);
         return bytes;
     }

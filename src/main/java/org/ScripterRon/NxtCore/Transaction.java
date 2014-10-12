@@ -29,11 +29,17 @@ public class Transaction {
     /** Zero signature */
     private static final byte[] nullSignature = new byte[64];
 
+    /** Transaction has a message */
+    public static final int TX_MESSAGE = 1;
+    /** Transaction has an encrypted message */
+    public static final int TX_ENCRYPTED_MESSAGE = 2;
+    /** Transaction has a public key announcement */
+    public static final int TX_PUBLIC_KEY_ANNOUNCE = 4;
+    /** Transaction has encrypted message to self */
+    public static final int TX_ENCRYPTED_MESSAGE_TO_SELF = 8;
+
     /** Transaction version */
     private final long version;
-
-    /** Transaction flags */
-    private final int flags = 0;
 
     /** EC block identifier */
     private final long ecBlockId;
@@ -251,7 +257,7 @@ public class Transaction {
         else
             txBuffer.put(nullSignature);
         if (version > 0) {
-            txBuffer.putInt(flags);
+            txBuffer.putInt(attachment!=null ? attachment.getFlags() : 0);
             txBuffer.putInt(ecBlockHeight);
             txBuffer.putLong(ecBlockId);
         }

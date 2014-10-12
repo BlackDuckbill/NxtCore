@@ -544,6 +544,35 @@ public class Nxt {
     }
 
     /**
+     * Send a message
+     *
+     * @param       recipientId             Recipient identifier
+     * @param       message                 Message to be sent (maximum length 1000)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to send message
+     */
+    public static long sendMessage(long recipientId, String message, long fee, int deadline,
+                                byte[] referencedTxHash, String passPhrase) throws NxtException {
+        long txId;
+        try {
+            TransactionType txType = TransactionType.Messaging.ARBITRARY_MESSAGE;
+            ArbitraryMessage attachment = new ArbitraryMessage(message);
+            EcBlock ecBlock = getEcBlock();
+            Transaction tx = new Transaction(txType, recipientId, 0, fee, deadline, null, attachment,
+                                            ecBlock, passPhrase);
+            txId = Nxt.broadcastTransaction(tx);
+        } catch (KeyException exc) {
+            log.error("Unable to sign transaction", exc);
+            throw new NxtException("Unable to sign transaction", exc);
+        }
+        return txId;
+    }
+
+    /**
      * Send Nxt
      *
      * @param       recipientId             Recipient identifier

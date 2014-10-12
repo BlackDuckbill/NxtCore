@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Account information attachment for TransactionType.Messaging.ACCOUNT_INFO
  */
-public class AccountInfo implements Attachment {
+public class AccountInfo extends AbstractAttachment {
 
     /** Attachment version */
     private final int version;

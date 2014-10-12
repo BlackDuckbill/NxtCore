@@ -16,21 +16,27 @@
 package org.ScripterRon.NxtCore;
 
 /**
- * Transaction attachment
+ * Abstract transaction attachment
  */
-public interface Attachment {
+public class AbstractAttachment implements Attachment {
 
     /**
      * Return the transaction flags associated with the attachment
      *
      * @return                              Transaction flags
      */
-    public int getFlags();
+    @Override
+    public int getFlags() {
+        return 0;
+    }
 
     /**
      * Return the attachment byte stream
      *
      * @return                              Byte stream
      */
-    public byte[] getBytes();
+    @Override
+    public byte[] getBytes() {
+        return new byte[0];
+    }
 }

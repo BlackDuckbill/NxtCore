@@ -22,7 +22,7 @@ import java.nio.ByteOrder;
 /**
  * Attachment for TransactionType.Messaging.ALIAS_SELL
  */
-public class AliasSell implements Attachment {
+public class AliasSell extends AbstractAttachment {
 
     /** Version */
     private final int version;

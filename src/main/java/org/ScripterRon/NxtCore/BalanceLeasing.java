@@ -21,7 +21,7 @@ import java.nio.ByteOrder;
 /**
  * Balance Leasing attachment for TransactionType.AccountControl.EFFECTIVE_BALANCE_LEASING
  */
-public class BalanceLeasing implements Attachment {
+public class BalanceLeasing extends AbstractAttachment {
 
     /** Attachment version */
     private final int version;
