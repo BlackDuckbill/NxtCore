@@ -27,15 +27,32 @@ public class EcBlock {
     /** Block height */
     private final int height;
 
+    /** Time when EC block determined */
+    private final int timestamp;
+
     /**
      * Create an Economic Clustering block
      *
      * @param       blockId                 Block identifier
      * @param       height                  Block height
+     * @param       timestamp               Time when EC block determined (seconds since genesis block)
      */
-    public EcBlock(long blockId, int height) {
+    public EcBlock(long blockId, int height, int timestamp) {
         this.blockId = blockId;
         this.height = height;
+        this.timestamp = timestamp;
+    }
+
+    /**
+     * Create an Economic Clustering block
+     *
+     * @param       response                Response for getECBlock
+     * @throws      IdentifierException     Invalid object identifier
+     */
+    public EcBlock(PeerResponse response) throws IdentifierException {
+        this.blockId = response.getId("ecBlockId");
+        this.height = response.getInt("ecBlockHeight");
+        this.timestamp = response.getInt("timestamp");
     }
 
     /**
@@ -54,5 +71,14 @@ public class EcBlock {
      */
     public int getHeight() {
         return height;
+    }
+
+    /**
+     * Return the time when the EC block was determined
+     *
+     * @return                              Time in seconds since the epoch (January 1, 1970)
+     */
+    public long getTimestamp() {
+        return timestamp + Nxt.GENESIS_TIMESTAMP;
     }
 }

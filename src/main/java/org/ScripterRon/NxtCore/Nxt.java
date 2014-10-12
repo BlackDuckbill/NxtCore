@@ -379,36 +379,21 @@ public class Nxt {
     }
 
     /**
-     * Get the Economic Clustering block
-     *
-     * The EC block is determined by working backwards from the last block in the chain.  Thus, there will
-     * be a different EC block each time a new block is added to the chain.
+     * Get the current Economic Clustering block
      *
      * @return                              EC block
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static EcBlock getEcBlock() throws NxtException {
-        long blockId;
-        int blockHeight;
+        EcBlock ecBlock;
         try {
-            PeerResponse response = issueRequest("getBlockchainStatus", null);
-            response = issueRequest("getBlock", "block="+response.getString("lastBlock"));
-            blockId = response.getId("block");
-            blockHeight = response.getInt("height");
-            int blockTime = response.getInt("timestamp");
-            int minHeight = Math.max(blockHeight-EC_BLOCK_DISTANCE_LIMIT, 0);
-            int minTime = (int)(System.currentTimeMillis()/1000-GENESIS_TIMESTAMP)-EC_RULE_TERMINATOR;
-            while (blockTime>minTime && blockHeight>minHeight) {
-                blockHeight--;
-                response = issueRequest("getBlock", "block="+response.getString("previousBlock"));
-                blockId = response.getId("block");
-                blockTime = response.getInt("timestamp");
-            }
-        } catch (IdentifierException | NumberFormatException exc) {
-            log.error("Invalid block data returned", exc);
-            throw new NxtException("Invalid block data returned");
+            PeerResponse response = issueRequest("getECBlock", null);
+            ecBlock = new EcBlock(response);
+        } catch (IdentifierException exc) {
+            log.error("Invalid EC block data returned", exc);
+            throw new NxtException("Invalid EC block data returned");
         }
-        return new EcBlock(blockId, blockHeight);
+        return ecBlock;
     }
 
     /**
