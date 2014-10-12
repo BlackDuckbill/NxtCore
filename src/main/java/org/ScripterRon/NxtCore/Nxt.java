@@ -56,7 +56,7 @@ public class Nxt {
     /** Genesis account identifier */
     public static final long GENESIS_ACCOUNT_ID = new BigInteger("1739068987193023818").longValue();
 
-    /** NXT <-> NQT */
+    /** Convert NXT to NQT */
     public static final long NQT_ADJUST = 100000000L;
 
     /** Minimum transaction amount */
