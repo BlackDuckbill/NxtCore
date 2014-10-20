@@ -15,9 +15,11 @@
  */
 package org.ScripterRon.NxtCore;
 
+import org.json.simple.JSONArray;
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,12 +66,6 @@ public class Nxt {
 
     /** Minimum transaction fee */
     public static final long MINIMUM_TX_FEE = 1 * NQT_ADJUST;
-
-    /** Maximum block timestamp distance (seconds) */
-    private static final int EC_RULE_TERMINATOR = 600;
-
-    /** Maximum block height distance */
-    private static final int EC_BLOCK_DISTANCE_LIMIT = 60;
 
     /** Incorrect request error */
     public static final int INCORRECT_REQUEST = 1;
@@ -185,27 +181,6 @@ public class Nxt {
     }
 
     /**
-     * Get the public key for an account
-     *
-     * @param       accountId               Account identifier
-     * @return                              Public key or null if the public key has not been set
-     * @throws      NxtException            Unable to issue Nxt API request
-     */
-    public static byte[] getAccountPublicKey(long accountId) throws NxtException {
-        byte[] publicKey;
-        try {
-            PeerResponse response = issueRequest("getAccountPublicKey", "account="+Utils.idToString(accountId));
-            publicKey = response.getHexString("publicKey");
-            if (Utils.getAccountId(publicKey) != accountId)
-                throw new NxtException("Incorrect public key return for 'getAccountPublicKey");
-        } catch (NumberFormatException exc) {
-            log.error("Invalid public key returned for 'getAccountPublicKey'", exc);
-            throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
-        }
-        return publicKey;
-    }
-
-    /**
      * Get the account block identifiers (blocks forged by the account)
      *
      * @param       accountId               Account identifier
@@ -225,41 +200,24 @@ public class Nxt {
     }
 
     /**
-     * Get the confirmed account transaction identifiers
+     * Get the public key for an account
      *
      * @param       accountId               Account identifier
-     * @return                              List of transaction identifiers
+     * @return                              Public key or null if the public key has not been set
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<Long> getConfirmedAccountTransactions(long accountId) throws NxtException {
-        List<Long> txList;
+    public static byte[] getAccountPublicKey(long accountId) throws NxtException {
+        byte[] publicKey;
         try {
-            PeerResponse response = issueRequest("getAccountTransactionIds", "account="+Utils.idToString(accountId));
-            txList = response.getIdList("transactionIds");
-        } catch (IdentifierException exc) {
-            log.error("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
-            throw new NxtException("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
+            PeerResponse response = issueRequest("getAccountPublicKey", "account="+Utils.idToString(accountId));
+            publicKey = response.getHexString("publicKey");
+            if (Utils.getAccountId(publicKey) != accountId)
+                throw new NxtException("Incorrect public key return for 'getAccountPublicKey");
+        } catch (NumberFormatException exc) {
+            log.error("Invalid public key returned for 'getAccountPublicKey'", exc);
+            throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
         }
-        return txList;
-    }
-
-    /**
-     * Get the unconfirmed account transaction identifiers
-     *
-     * @param       accountId               Account identifier
-     * @return                              List of transaction identifiers
-     * @throws      NxtException            Unable to issue Nxt API request
-     */
-    public static List<Long> getUnconfirmedAccountTransactions(long accountId) throws NxtException {
-        List<Long> txList;
-        try {
-            PeerResponse response = issueRequest("getUnconfirmedTransactionIds", "account="+Utils.idToString(accountId));
-            txList = response.getIdList("unconfirmedTransactionIds");
-        } catch (IdentifierException exc) {
-            log.error("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
-            throw new NxtException("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
-        }
-        return txList;
+        return publicKey;
     }
 
     /**
@@ -369,13 +327,67 @@ public class Nxt {
         try {
             PeerResponse response = issueRequest("getBlock", "block="+Utils.idToString(blockId));
             block = new Block(response);
-            if (block.getBlockId() != blockId)
-                throw new NxtException("Calculated block identifier incorrect for block "+Utils.idToString(blockId));
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid block data returned for 'getBlock'", exc);
             throw new NxtException("Invalid block data returned for 'getBlock'", exc);
         }
         return block;
+    }
+
+    /**
+     * Get the identifier of the block at a specified height
+     *
+     * @param       height                  Block height
+     * @return                              Block identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static long getBlockId(int height) throws NxtException {
+        long blockId;
+        try {
+            PeerResponse response = issueRequest("getBlockId", String.format("height=%d", height));
+            blockId = response.getId("block");
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid block identifier returned for 'getBlockId'", exc);
+            throw new NxtException("Invalid block identifier returned for 'getBlockId'", exc);
+        }
+        return blockId;
+    }
+
+    /**
+     * Get the current block chain state
+     *
+     * @return                              Chain state
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static ChainState getChainState() throws NxtException {
+        ChainState chainState;
+        try {
+            PeerResponse response = issueRequest("getBlockchainStatus", null);
+            chainState = new ChainState(response);
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid data returned for 'getBlockchainStatus'", exc);
+            throw new NxtException("Invalid state data returned for 'getBlockchainStatus'", exc);
+        }
+        return chainState;
+    }
+
+    /**
+     * Get the confirmed account transaction identifiers
+     *
+     * @param       accountId               Account identifier
+     * @return                              List of transaction identifiers
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getConfirmedAccountTransactions(long accountId) throws NxtException {
+        List<Long> txList;
+        try {
+            PeerResponse response = issueRequest("getAccountTransactionIds", "account="+Utils.idToString(accountId));
+            txList = response.getIdList("transactionIds");
+        } catch (IdentifierException exc) {
+            log.error("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
+            throw new NxtException("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
+        }
+        return txList;
     }
 
     /**
@@ -418,21 +430,46 @@ public class Nxt {
     }
 
     /**
-     * Get the current block chain state
+     * Get a peer
      *
-     * @return                              Chain state
+     * @param       networkAddress          The network address of the peer
+     * @return                              Peer
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static ChainState getChainState() throws NxtException {
-        ChainState chainState;
+    public static Peer getPeer(String networkAddress) throws NxtException {
+        Peer peer;
         try {
-            PeerResponse response = issueRequest("getBlockchainStatus", null);
-            chainState = new ChainState(response);
-        } catch (IdentifierException | NumberFormatException exc) {
-            log.error("Invalid data returned for 'getBlockchainStatus'", exc);
-            throw new NxtException("Invalid state data returned for 'getBlockchainStatus'", exc);
+            PeerResponse response = issueRequest("getPeer", "peer="+networkAddress);
+            peer = new Peer(networkAddress, response);
+        } catch (NumberFormatException exc) {
+            log.error("Invalid peer data returned for 'getPeer'", exc);
+            throw new NxtException("Invalid peer data returned for 'getPeer'", exc);
         }
-        return chainState;
+        return peer;
+    }
+
+    /**
+     * Get the current peer list
+     *
+     * @param       active                  TRUE to return just the peers in the active list (CONNECTED or DISCONNECTED)
+     * @return                              List of network addresses (IPv6 addresses are enclosed in brackets)
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<String> getPeers(boolean active) throws NxtException {
+        PeerResponse response = issueRequest("getPeers", "active="+(active?"true":"false"));
+        return response.getStringList("peers");
+    }
+
+    /**
+     * Get the current peer list containing peers in the requested state
+     *
+     * @param       state                   Peer state
+     * @return                              List of network addresses (IPv6 addresses are enclosed in brackets)
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<String> getPeers(Peer.State state) throws NxtException {
+        PeerResponse response = issueRequest("getPeers", "state="+state.name());
+        return response.getStringList("peers");
     }
 
     /**
@@ -454,6 +491,25 @@ public class Nxt {
             throw new NxtException("Unable to create transaction from peer response", exc);
         }
         return tx;
+    }
+
+    /**
+     * Get the unconfirmed account transaction identifiers
+     *
+     * @param       accountId               Account identifier
+     * @return                              List of transaction identifiers
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getUnconfirmedAccountTransactions(long accountId) throws NxtException {
+        List<Long> txList;
+        try {
+            PeerResponse response = issueRequest("getUnconfirmedTransactionIds", "account="+Utils.idToString(accountId));
+            txList = response.getIdList("unconfirmedTransactionIds");
+        } catch (IdentifierException exc) {
+            log.error("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
+            throw new NxtException("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
+        }
+        return txList;
     }
 
     /**
@@ -666,9 +722,12 @@ public class Nxt {
                 out.write(request);
                 out.flush();
                 int code = conn.getResponseCode();
-                if (code != HttpURLConnection.HTTP_OK)
-                    throw new NxtException(String.format("Response code %d for %s request\n  %s",
-                                                         code, requestType, conn.getResponseMessage()));
+                if (code != HttpURLConnection.HTTP_OK) {
+                    String errorText = String.format("Response code %d for %s request\n  %s",
+                                                         code, requestType, conn.getResponseMessage());
+                    log.error(errorText);
+                    throw new NxtException(errorText);
+                }
             }
             //
             // Parse the response
@@ -679,17 +738,24 @@ public class Nxt {
                 Long errorCode = (Long)response.get("errorCode");
                 if (errorCode != null) {
                     String errorDesc = (String)response.get("errorDescription");
-                    throw new NxtException(String.format("Error %d returned for %s request\n  %s",
-                                           errorCode, requestType, errorDesc), errorCode.intValue());
+                    String errorText = String.format("Error %d returned for %s request\n  %s",
+                                           errorCode, requestType, errorDesc);
+                    log.error(errorText);
+                    throw new NxtException(errorText, errorCode.intValue());
                 }
             }
-            log.debug("Request complete");
+            log.debug(String.format("Request complete\n%s", Utils.formatJSON(response)));
         } catch (MalformedURLException exc) {
             throw new NxtException("Malformed Nxt API URL", exc);
         } catch (ParseException exc) {
-            throw new NxtException(String.format("JSON parse exception for %s request", requestType), exc);
+            String errorText = String.format("JSON parse exception for %s request: Position %d, Code %d",
+                                             requestType, exc.getPosition(), exc.getErrorType());
+            log.error(errorText);
+            throw new NxtException(errorText);
         } catch (IOException exc) {
-            throw new NxtException(String.format("I/O error on %s request", requestType), exc);
+            String errorText = String.format("I/O error on %s request", requestType);
+            log.error(errorText, exc);
+            throw new NxtException(errorText, exc);
         }
         return response;
     }
@@ -718,7 +784,7 @@ public class Nxt {
          */
         @Override
         public List<Object> creatArrayContainer() {
-            return new ArrayList<>();
+            return new JSONArray();
         }
     }
 }

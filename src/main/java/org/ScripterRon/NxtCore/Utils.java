@@ -18,10 +18,14 @@ package org.ScripterRon.NxtCore;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.math.BigInteger;
-
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONAware;
+import org.json.simple.JSONObject;
 
 /**
  * Utility functions
@@ -204,4 +208,77 @@ public class Utils {
         }
         return value;
     }
+
+    /**
+     * Create a formatted string for a JSON response
+     *
+     * @param       response                The JSON response
+     * @return                              Formatted string
+     */
+    public static String formatJSON(JSONAware response) {
+        StringBuilder builder = new StringBuilder(256);
+        formatJSON(builder, "", response);
+        return new String(builder);
+    }
+
+    /**
+     * Create a formatted string for a JSON structure
+     *
+     * @param       builder                 String builder
+     * @param       indent                  Output indentation
+     * @param       object                  The JSON object
+     */
+    private static void formatJSON(StringBuilder builder, String indent, JSONAware object) {
+        String itemIndent = indent+"  ";
+        if (object instanceof JSONArray) {
+            JSONArray array = (JSONArray)object;
+            builder.append(indent).append("[\n");
+            array.stream().forEach((value) -> {
+                if (value == null) {
+                    builder.append(itemIndent).append("null").append('\n');
+                } else if (value instanceof Boolean) {
+                    builder.append(itemIndent).append((Boolean)value ? "true\n" : "false\n");
+                } else if (value instanceof Long) {
+                    builder.append(itemIndent).append(((Long)value).toString()).append('\n');
+                } else if (value instanceof Double) {
+                    builder.append(itemIndent).append(((Double)value).toString()).append('\n');
+                } else if (value instanceof String) {
+                    builder.append(itemIndent).append('"').append((String)value).append("\"\n");
+                } else if (value instanceof JSONAware) {
+                    builder.append('\n');
+                    formatJSON(builder, itemIndent+"  ", (JSONAware)value);
+                } else {
+                    builder.append(itemIndent).append("Unknown\n");
+                }
+            });
+            builder.append(indent).append("]\n");
+        } else {
+            builder.append(indent).append("{\n");
+            JSONObject map = (JSONObject)object;
+            Iterator<Map.Entry> it = map.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry entry = it.next();
+                builder.append(itemIndent).append("\"").append((String)entry.getKey()).append("\": ");
+                Object value = entry.getValue();
+                if (value == null) {
+                    builder.append("null").append('\n');
+                } else if (value instanceof Boolean) {
+                    builder.append((Boolean)value ? "true\n" : "false\n");
+                } else if (value instanceof Long) {
+                    builder.append(((Long)value).toString()).append('\n');
+                } else if (value instanceof Double) {
+                    builder.append(((Double)value).toString()).append('\n');
+                } else if (value instanceof String) {
+                    builder.append('"').append((String)value).append("\"\n");
+                } else if (value instanceof JSONAware) {
+                    builder.append('\n');
+                    formatJSON(builder, itemIndent+"  ", (JSONAware)value);
+                } else {
+                    builder.append("Unknown\n");
+                }
+            }
+            builder.append(indent).append("}\n");
+        }
+    }
+
 }

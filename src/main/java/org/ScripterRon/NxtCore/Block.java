@@ -15,9 +15,6 @@
  */
 package org.ScripterRon.NxtCore;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 import java.util.List;
 
 /**
