@@ -5,7 +5,7 @@ NxtCore provides support for accessing the Nxt API.  It communicates with a Nxt 
 
 The SLF4J logging facility (slf4j-api) is used to log messages.  The application is responsible for providing and configuring the appropriate logger implementation (for example, slf4j-jdk).
 
-The NxtWallet project provides an example of how to configure and use the NxtCore library.
+The NxtMonitor and NxtWallet projects provide examples of how to configure and use the NxtCore library.
 
 
 Build
@@ -23,7 +23,7 @@ Here are the steps for a manual build.  You will need to install Maven 3 and Jav
 Tutorial
 ========
 
-Refer to the NxtCore Javadoc for a detailed description of the classes and methods.  The ScripterRon/NxtWallet source code provides examples of how to use the various API methods.
+Refer to the NxtCore Javadoc for a detailed description of the classes and methods.  The NxtMonitor and NxtWallet source code provide examples of how to use the various API methods.  The following are some common usages.    
 
 Before any NxtCore function can be used, the library must be initialized.  The Nxt.init() method sets the NRS host name/address (usually "localhost") and the server port (usually 7876).
 
@@ -35,7 +35,7 @@ To send Nxt, you need to create and broadcast a payment transaction.  NxtCore wi
     
 To send a message, you need to create and broadcast a messaging transaction.  The message is an arbitrary byte array provided.  NxtCore does not inspect or modify the contents of the message.
 
-    long txId = Nxt.sendMessage(recipientId, messageBytes, fee, deadline, null, secretPhrase);
+    long txId = Nxt.sendMessage(recipientId, message, fee, deadline, null, secretPhrase);
 
 To assign an alias, you need to create and broadcast a messaging transaction.  The alias name must consist of letters and numbers with no embedded spaces (leading and trailing spaces will be removed).  The alias URI is an arbitrary string.  NxtCore does not inspect or modify the URI.
 
