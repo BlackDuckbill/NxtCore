@@ -23,13 +23,15 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FilterOutputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -171,8 +173,6 @@ public class Nxt {
         try {
             PeerResponse response = issueRequest("getAccount", "account="+Utils.idToString(accountId));
             account = new Account(response);
-            if (account.getAccountId() != accountId)
-                throw new NxtException("Incorrect account returned for 'getAccount'");
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid account data returned for 'getAccount'", exc);
             throw new NxtException("Invalid account data returned for 'getAccount'", exc);
@@ -211,8 +211,6 @@ public class Nxt {
         try {
             PeerResponse response = issueRequest("getAccountPublicKey", "account="+Utils.idToString(accountId));
             publicKey = response.getHexString("publicKey");
-            if (Utils.getAccountId(publicKey) != accountId)
-                throw new NxtException("Incorrect public key return for 'getAccountPublicKey");
         } catch (NumberFormatException exc) {
             log.error("Invalid public key returned for 'getAccountPublicKey'", exc);
             throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
@@ -252,8 +250,6 @@ public class Nxt {
         try {
             PeerResponse response = issueRequest("getAlias", "alias="+Utils.idToString(aliasId));
             alias = new Alias(response);
-            if (alias.getAliasId() != aliasId)
-                throw new NxtException("Incorrect alias returned for 'getAlias' request");
         } catch (IdentifierException exc) {
             log.error("Invalid alias data returned for 'getAlias'", exc);
             throw new NxtException("Invalid alias data returned for 'getAlias'", exc);
@@ -271,13 +267,13 @@ public class Nxt {
     public static Alias getAlias(String aliasName) throws NxtException {
         Alias alias;
         try {
-            PeerResponse response = issueRequest("getAlias", "aliasName="+aliasName);
+            PeerResponse response = issueRequest("getAlias", "aliasName="+URLEncoder.encode(aliasName, "UTF-8"));
             alias = new Alias(response);
-            if (!alias.getAliasName().equals(aliasName))
-                throw new NxtException("Incorrect alias returned for 'getAlias' request");
         } catch (IdentifierException exc) {
             log.error("Invalid alias data returned for 'getAlias'", exc);
             throw new NxtException("Invalid alias data returned for 'getAlias'", exc);
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode alias name", exc);
         }
         return alias;
     }
@@ -303,8 +299,6 @@ public class Nxt {
                 aliasList = new ArrayList<>(aliases.size());
                 for (PeerResponse aliasResponse : aliases) {
                     Alias alias = new Alias(aliasResponse);
-                    if (alias.getAccountId() != accountId)
-                        throw new NxtException("Incorrect alias account identifier for 'getAliases'");
                     aliasList.add(alias);
                 }
             }
@@ -439,11 +433,13 @@ public class Nxt {
     public static Peer getPeer(String networkAddress) throws NxtException {
         Peer peer;
         try {
-            PeerResponse response = issueRequest("getPeer", "peer="+networkAddress);
+            PeerResponse response = issueRequest("getPeer", "peer="+URLEncoder.encode(networkAddress, "UTF-8"));
             peer = new Peer(networkAddress, response);
         } catch (NumberFormatException exc) {
             log.error("Invalid peer data returned for 'getPeer'", exc);
             throw new NxtException("Invalid peer data returned for 'getPeer'", exc);
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode network address", exc);
         }
         return peer;
     }
@@ -704,6 +700,7 @@ public class Nxt {
                 request = String.format("requestType=%s&%s", requestType, requestParams);
             else
                 request = String.format("requestType=%s", requestType);
+            byte[] requestBytes = request.getBytes("UTF-8");
             log.debug(String.format("Issue HTTP request to %s:%d: %s", nodeName, nodePort, request));
             //
             // Issue the request
@@ -711,15 +708,16 @@ public class Nxt {
             HttpURLConnection conn = (HttpURLConnection)url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            conn.setRequestProperty("Content-Length", String.format("%d", request.length()));
+            conn.setRequestProperty("Cache-Control", "no-cache, no-store");
+            conn.setRequestProperty("Content-Length", String.format("%d", requestBytes.length));
             conn.setDoInput(true);
             conn.setDoOutput(true);
             conn.setUseCaches(false);
             conn.setConnectTimeout(nodeConnectTimeout);
             conn.setReadTimeout(nodeReadTimeout);
             conn.connect();
-            try (OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8")) {
-                out.write(request);
+            try (FilterOutputStream out = new FilterOutputStream(conn.getOutputStream())) {
+                out.write(requestBytes);
                 out.flush();
                 int code = conn.getResponseCode();
                 if (code != HttpURLConnection.HTTP_OK) {
