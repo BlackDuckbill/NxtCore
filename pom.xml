@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.ScripterRon</groupId>
     <artifactId>NxtCore</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,7 +14,7 @@
     </properties>
     <name>Java Nxt Core Library</name>
     <url>https://github.com/ScripterRon/NxtCore</url>
-    <description>NxtCore provides support for applications using the Nxt API.
+    <description>NxtCore provides support for applications using the Nxt API
     </description>
     <licenses>
         <license>

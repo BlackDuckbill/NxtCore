@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ronald Hoffman.
+ * Copyright 2014-2015 Ronald Hoffman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,8 @@ public abstract class TransactionType {
     public static final byte SUBTYPE_MESSAGING_ALIAS_SELL = 6;
     /** Buy alias */
     public static final byte SUBTYPE_MESSAGING_ALIAS_BUY = 7;
+    /** Delete alias */
+    public static final byte SUBTYPE_MESSAGING_ALIAS_DELETE = 8;
 
     /** Colored coin transaction (Asset Exchange) */
     public static final byte TYPE_COLORED_COINS = 2;
@@ -58,6 +60,8 @@ public abstract class TransactionType {
     public static final byte SUBTYPE_COLORED_COINS_ASK_ORDER_CANCELLATION = 4;
     /** Cancel bid order */
     public static final byte SUBTYPE_COLORED_COINS_BID_ORDER_CANCELLATION = 5;
+    /** Dividend payment */
+    public static final byte SUBTYPE_COLORED_COINS_DIVIDEND_PAYMENT = 6;
 
     /** Digital goods transaction */
     public static final byte TYPE_DIGITAL_GOODS = 3;
@@ -82,6 +86,27 @@ public abstract class TransactionType {
     public static final byte TYPE_ACCOUNT_CONTROL = 4;
     /** Lease effective balance */
     public static final byte SUBTYPE_ACCOUNT_CONTROL_EFFECTIVE_BALANCE_LEASING = 0;
+    
+    /** Monetary system transaction */
+    public static final byte TYPE_MONETARY_SYSTEM = 5;
+    /** Issue currency */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_CURRENCY_ISSUANCE = 0;
+    /** Increase reserve */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_RESERVE_INCREASE = 1;
+    /** Claim reserve */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_RESERVE_CLAIM = 2;
+    /** Transfer currency */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_CURRENCY_TRANSFER = 3;
+    /** Publish exchange offer */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_PUBLISH_EXCHANGE_OFFER = 4;
+    /** Exchange buy */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_EXCHANGE_BUY = 5;
+    /** Exchange sell */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_EXCHANGE_SELL = 6;
+    /** Mint currency */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_CURRENCY_MINTING = 7;
+    /** Delete currency */
+    public static final byte SUBTYPE_MONETARY_SYSTEM_CURRENCY_DELETION = 8;
 
     /**
      * Return the TransactionType for the specified type and subtype values
@@ -126,6 +151,9 @@ public abstract class TransactionType {
                     case SUBTYPE_MESSAGING_ALIAS_BUY:
                         txType = Messaging.ALIAS_BUY;
                         break;
+                    case SUBTYPE_MESSAGING_ALIAS_DELETE:
+                        txType = Messaging.ALIAS_DELETE;
+                        break;
                 }
                 break;
             case TYPE_COLORED_COINS:
@@ -147,6 +175,9 @@ public abstract class TransactionType {
                         break;
                     case SUBTYPE_COLORED_COINS_BID_ORDER_CANCELLATION:
                         txType = ColoredCoins.BID_ORDER_CANCELLATION;
+                        break;
+                    case SUBTYPE_COLORED_COINS_DIVIDEND_PAYMENT:
+                        txType = ColoredCoins.DIVIDEND_PAYMENT;
                         break;
                 }
                 break;
@@ -185,6 +216,36 @@ public abstract class TransactionType {
                         break;
                 }
                 break;
+            case TYPE_MONETARY_SYSTEM:
+                switch (subtype) {
+                    case SUBTYPE_MONETARY_SYSTEM_CURRENCY_ISSUANCE:
+                        txType = MonetarySystem.CURRENCY_ISSUANCE;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_RESERVE_INCREASE:
+                        txType = MonetarySystem.RESERVE_INCREASE;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_RESERVE_CLAIM:
+                        txType = MonetarySystem.RESERVE_CLAIM;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_CURRENCY_TRANSFER:
+                        txType = MonetarySystem.CURRENCY_TRANSFER;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_PUBLISH_EXCHANGE_OFFER:
+                        txType = MonetarySystem.PUBLISH_EXCHANGE_OFFER;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_EXCHANGE_BUY:
+                        txType = MonetarySystem.EXCHANGE_BUY;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_EXCHANGE_SELL:
+                        txType = MonetarySystem.EXCHANGE_SELL;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_CURRENCY_MINTING:
+                        txType = MonetarySystem.CURRENCY_MINTING;
+                        break;
+                    case SUBTYPE_MONETARY_SYSTEM_CURRENCY_DELETION:
+                        txType = MonetarySystem.CURRENCY_DELETION;
+                        break;
+                }
         }
         return txType;
     }
@@ -450,6 +511,31 @@ public abstract class TransactionType {
             @Override
             public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
                 return new AliasSell(response);
+            }
+        };
+
+        /**
+         * Delete alias
+         */
+        public static final TransactionType ALIAS_DELETE = new Messaging() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MESSAGING_ALIAS_DELETE;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Delete alias";
             }
         };
 
@@ -731,6 +817,31 @@ public abstract class TransactionType {
                 return "Bid order cancellation";
             }
         };
+
+        /**
+         * Dividend payment
+         */
+        public static final TransactionType DIVIDEND_PAYMENT = new ColoredCoins() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_COLORED_COINS_DIVIDEND_PAYMENT;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Dividend payment";
+            }
+        };
     }
 
     /**
@@ -1001,4 +1112,244 @@ public abstract class TransactionType {
             }
         };
     }
+
+    /**
+     * Monetary system transactions
+     */
+    public static abstract class MonetarySystem extends TransactionType {
+        /**
+         * Return the transaction type
+         *
+         * @return                      Transaction type
+         */
+        @Override
+        public byte getType() {
+            return TYPE_MONETARY_SYSTEM;
+        }
+
+        /**
+         * Issue currency
+         */
+        public static final TransactionType CURRENCY_ISSUANCE = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_CURRENCY_ISSUANCE;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Issue currency";
+            }
+        };
+
+        /**
+         * Increase reserve
+         */
+        public static final TransactionType RESERVE_INCREASE = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_RESERVE_INCREASE;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Increase currency reserve";
+            }
+        };
+
+        /**
+         * Claim reserve
+         */
+        public static final TransactionType RESERVE_CLAIM = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_RESERVE_CLAIM;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Claim currency reserve";
+            }
+        };
+
+        /**
+         * Transfer currency
+         */
+        public static final TransactionType CURRENCY_TRANSFER = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_CURRENCY_TRANSFER;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Transfer currency";
+            }
+        };
+
+        /**
+         * Publish exchange offer
+         */
+        public static final TransactionType PUBLISH_EXCHANGE_OFFER = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_PUBLISH_EXCHANGE_OFFER;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Publish exchange offer";
+            }
+        };
+
+        /**
+         * Buy currency
+         */
+        public static final TransactionType EXCHANGE_BUY = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_EXCHANGE_BUY;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Buy currency";
+            }
+        };
+
+        /**
+         * Sell currency
+         */
+        public static final TransactionType EXCHANGE_SELL = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_EXCHANGE_SELL;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Sell currency";
+            }
+        };
+
+        /**
+         * Mint currency
+         */
+        public static final TransactionType CURRENCY_MINTING = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_CURRENCY_MINTING;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Mint currency";
+            }
+        };
+
+        /**
+         * Delete currency
+         */
+        public static final TransactionType CURRENCY_DELETION = new MonetarySystem() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MONETARY_SYSTEM_CURRENCY_DELETION;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Delete currency";
+            }
+        };
+    }    
 }
