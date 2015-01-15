@@ -1325,6 +1325,20 @@ public abstract class TransactionType {
             public String getDescription() {
                 return "Mint currency";
             }
+
+            /**
+             * Create an attachment from the JSON response
+             *
+             * @param       response                JSON response
+             * @return                              Attachment
+             * @throws      IdentifierException     Invalid object identifier
+             * @throws      NumberFormatException   Invalid numeric string
+             * @throws      NxtException            Invalid peer response
+             */
+            @Override
+            public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
+                return new CurrencyMinting(response);
+            }            
         };
 
         /**

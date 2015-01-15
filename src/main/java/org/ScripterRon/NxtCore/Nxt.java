@@ -385,6 +385,50 @@ public class Nxt {
     }
 
     /**
+     * Get a currency
+     *
+     * @param       currencyId              Currency identifier
+     * @param       includeCounts           TRUE to include exchange and transfer counts in the response
+     * @return                              Currency
+     * @throws      IdentifierException     Invalid currency identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static Currency getCurrency(long currencyId, boolean includeCounts) throws IdentifierException, NxtException {
+        Currency currency;
+        try {
+            PeerResponse response = issueRequest("getCurrency", String.format("currency=%s&includeCounts=%s",
+                                            Utils.idToString(currencyId), includeCounts?"TRUE":"FALSE"));
+            currency = new Currency(response);
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid currency data returned for 'getCurrency'", exc);
+            throw new NxtException("Invalid currency data returned for 'getCurrency'", exc);
+        }
+        return currency;
+    }
+
+    /**
+     * Get a currency
+     *
+     * @param       currencyCode            Currency code (3-5 character identifier)
+     * @param       includeCounts           TRUE to include exchange and transfer counts in the response
+     * @return                              Currency
+     * @throws      IdentifierException     Invalid currency identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static Currency getCurrency(String currencyCode, boolean includeCounts) throws IdentifierException, NxtException {
+        Currency currency;
+        try {
+            PeerResponse response = issueRequest("getCurrency", String.format("code=%s&includeCounts=%s",
+                                            currencyCode, includeCounts?"TRUE":"FALSE"));
+            currency = new Currency(response);
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid currency data returned for 'getCurrency'", exc);
+            throw new NxtException("Invalid currency data returned for 'getCurrency'", exc);
+        }
+        return currency;
+    }
+
+    /**
      * Get the current Economic Clustering block
      *
      * @return                              EC block
@@ -400,6 +444,30 @@ public class Nxt {
             throw new NxtException("Invalid EC block data returned");
         }
         return ecBlock;
+    }
+    
+    /**
+     * Get the minting target
+     * 
+     * @param       currencyId              Currency identifier
+     * @param       accountId               Account identifier
+     * @param       units                   Number of units to mint expressed as a whole number with 
+     *                                      an implied decimal point as defined for the currency
+     * @return                              Minting target
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static MintingTarget getMintingTarget(long currencyId, long accountId, long units)
+                                            throws NxtException {
+        MintingTarget mintingTarget;
+        try {
+            PeerResponse response = issueRequest("getMintingTarget", String.format("currency=%s&account=%s&units=%s",
+                                            Utils.idToString(currencyId), Utils.idToString(accountId), units));
+            mintingTarget = new MintingTarget(response);
+        } catch (IdentifierException | NumberFormatException exc){
+            log.error("Invalid minting data returned for 'getMintingTarget'", exc);
+            throw new NxtException("Invalid minting data returned for 'getMintingTarget'", exc);
+        }
+        return mintingTarget;
     }
 
     /**
@@ -526,6 +594,38 @@ public class Nxt {
         try {
             TransactionType txType = TransactionType.Messaging.ALIAS_ASSIGNMENT;
             AliasAssignment attachment = new AliasAssignment(aliasName, aliasUri);
+            EcBlock ecBlock = getEcBlock();
+            Transaction tx = new Transaction(txType, GENESIS_ACCOUNT_ID, 0, fee, deadline, null, attachment,
+                                            ecBlock, passPhrase);
+            txId = Nxt.broadcastTransaction(tx);
+        } catch (KeyException exc) {
+            log.error("Unable to sign transaction", exc);
+            throw new NxtException("Unable to sign transaction", exc);
+        }
+        return txId;
+    }
+
+    /**
+     * Mint currency
+     *
+     * @param       currencyId              Currency identifier
+     * @param       units                   Number of units minted
+     * @param       counter                 Minting counter
+     * @param       nonce                   Target solution nonce
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      NxtException            Unable to assign the alias
+     */
+    public static long currencyMint(long currencyId, long units, long counter, long nonce, 
+                                long fee, int deadline, byte[] referencedTxHash, String passPhrase) 
+                                throws NxtException {
+        long txId;
+        try {
+            TransactionType txType = TransactionType.MonetarySystem.CURRENCY_MINTING;
+            CurrencyMinting attachment = new CurrencyMinting(currencyId, units, counter, nonce);
             EcBlock ecBlock = getEcBlock();
             Transaction tx = new Transaction(txType, GENESIS_ACCOUNT_ID, 0, fee, deadline, null, attachment,
                                             ecBlock, passPhrase);
@@ -736,7 +836,7 @@ public class Nxt {
                 Long errorCode = (Long)response.get("errorCode");
                 if (errorCode != null) {
                     String errorDesc = (String)response.get("errorDescription");
-                    String errorText = String.format("Error %d returned for %s request\n  %s",
+                    String errorText = String.format("Error %d returned for %s request: %s",
                                            errorCode, requestType, errorDesc);
                     log.error(errorText);
                     throw new NxtException(errorText, errorCode.intValue());
