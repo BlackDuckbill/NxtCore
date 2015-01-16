@@ -23,7 +23,7 @@ Here are the steps for a manual build.  You will need to install Maven 3 and Jav
 Tutorial
 ========
 
-Refer to the NxtCore Javadoc for a detailed description of the classes and methods.  The NxtMonitor and NxtWallet source code provide examples of how to use the various API methods.  The following are some common usages.    
+Refer to the NxtCore Javadoc for a detailed description of the classes and methods.  The NxtMint, NxtMonitor and NxtWallet source code provide examples of how to use the various API methods.  The following are some common usages.    
 
 Before any NxtCore function can be used, the library must be initialized.  The Nxt.init() method sets the NRS host name/address (usually "localhost") and the server port (usually 7876).
 
