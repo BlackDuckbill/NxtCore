@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ronald Hoffman.
+ * Copyright 2014-2015 Ronald Hoffman.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,22 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Make API requests to the local Nxt node and return the results
@@ -98,6 +109,15 @@ public class Nxt {
     /** Read timeout */
     private static int nodeReadTimeout = 30000;
 
+    /** Use HTTPS instead of HTTP */
+    private static boolean useHTTPS = false;
+
+    /** Allow certificate host name mismatch */
+    private static boolean allowMismatch = false;
+
+    /** Accept any certificates */
+    private static boolean acceptAny = false;
+
     /**
      * Initialize the Nxt core library using default timeout values
      *
@@ -105,9 +125,29 @@ public class Nxt {
      * @param       apiPort                 Port for the node server
      */
     public static void init(String hostName, int apiPort) {
+        init(hostName, apiPort, false, false, false);
+    }
+
+    /**
+     * Initialize the Nxt core library using default timeout values
+     *
+     * @param       hostName                Host name or IP address of the node server
+     * @param       apiPort                 Port for the node server
+     * @param       useSSL                  TRUE to use HTTPS instead of HTTP
+     * @param       allowNameMismatch       TRUE to allow certificate host name mismatch
+     * @param       acceptAnyCertificate    TRUE if any certificate should be accepted
+     */
+    public static void init(String hostName, int apiPort, boolean useSSL,
+                                            boolean allowNameMismatch, boolean acceptAnyCertificate) {
         nodeName = hostName;
         nodePort = apiPort;
-        log.info(String.format("API node=%s, API port=%d", hostName, apiPort));
+        useHTTPS = useSSL;
+        allowMismatch = allowNameMismatch;
+        acceptAny = acceptAnyCertificate;
+        if (useHTTPS)
+            sslInit();
+        log.info(String.format("API node=%s, API port=%d, HTTPS=%s, Allow mismatch=%s",
+                               hostName, apiPort, useHTTPS, allowMismatch));
     }
 
     /**
@@ -119,12 +159,59 @@ public class Nxt {
      * @param       readTimeout             HTTP read timeout in milliseconds
      */
     public static void init(String hostName, int apiPort, int connectTimeout, int readTimeout) {
+        init(hostName, apiPort, false, false, false, connectTimeout, readTimeout);
+    }
+
+    /**
+     * Initialize the Nxt core library using the supplied timeout values
+     *
+     * @param       hostName                Host name or IP address of the node server
+     * @param       apiPort                 Port for the node server
+     * @param       useSSL                  TRUE to use HTTPS instead of HTTP
+     * @param       allowNameMismatch       TRUE to allow certificate host name mismatch
+     * @param       acceptAnyCertificate    TRUE if any certificate should be accepted
+     * @param       connectTimeout          HTTP connect timeout in milliseconds
+     * @param       readTimeout             HTTP read timeout in milliseconds
+     */
+    public static void init(String hostName, int apiPort, boolean useSSL,
+                                            boolean allowNameMismatch, boolean acceptAnyCertificate,
+                                            int connectTimeout, int readTimeout) {
         nodeName = hostName;
         nodePort = apiPort;
+        useHTTPS = useSSL;
+        allowMismatch = allowNameMismatch;
+        acceptAny = acceptAnyCertificate;
         nodeConnectTimeout = connectTimeout;
         nodeReadTimeout = readTimeout;
-        log.info(String.format("API node=%s, API port=%d, connect timeout=%d, read timeout=%d",
-                               hostName, apiPort, nodeConnectTimeout, nodeReadTimeout));
+        if (useHTTPS)
+            sslInit();
+        log.info(String.format("API node=%s, API port=%d, HTTPS=%s, Allow mismatch=%s connect timeout=%d, read timeout=%d",
+                               hostName, apiPort, useHTTPS, allowMismatch, nodeConnectTimeout, nodeReadTimeout));
+    }
+
+    /**
+     * SSL initialization
+     */
+    private static void sslInit() {
+        try {
+            //
+            // Create the SSL context
+            //
+            SSLContext context = SSLContext.getInstance("TLS");
+            TrustManager[] tm = (acceptAny ? new TrustManager[] {new AllCertificates()} : null);
+            context.init(null, tm, new SecureRandom());
+            //
+            // Set default values for HTTPS connections
+            //
+            HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
+            HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+        } catch (NoSuchAlgorithmException exc) {
+            log.error("TLS algorithm is not available", exc);
+            throw new IllegalStateException("TLS algorithm is not available");
+        } catch (KeyManagementException exc) {
+            log.error("Unable to initialize SSL context", exc);
+            throw new IllegalStateException("Unable to initialize SSL context", exc);
+        }
     }
 
     /**
@@ -445,13 +532,13 @@ public class Nxt {
         }
         return ecBlock;
     }
-    
+
     /**
      * Get the minting target
-     * 
+     *
      * @param       currencyId              Currency identifier
      * @param       accountId               Account identifier
-     * @param       units                   Number of units to mint expressed as a whole number with 
+     * @param       units                   Number of units to mint expressed as a whole number with
      *                                      an implied decimal point as defined for the currency
      * @return                              Minting target
      * @throws      NxtException            Unable to issue Nxt API request
@@ -619,8 +706,8 @@ public class Nxt {
      * @return                              Transaction identifier
      * @throws      NxtException            Unable to assign the alias
      */
-    public static long currencyMint(long currencyId, long units, long counter, long nonce, 
-                                long fee, int deadline, byte[] referencedTxHash, String passPhrase) 
+    public static long currencyMint(long currencyId, long units, long counter, long nonce,
+                                long fee, int deadline, byte[] referencedTxHash, String passPhrase)
                                 throws NxtException {
         long txId;
         try {
@@ -794,7 +881,7 @@ public class Nxt {
         if (nodeName == null)
             throw new NxtException("Nxt library has not been initialized");
         try {
-            URL url = new URL(String.format("http://%s:%d/nxt", nodeName, nodePort));
+            URL url = new URL(String.format("%s://%s:%d/nxt", (useHTTPS ? "https" : "http"), nodeName, nodePort));
             String request;
             if (requestParams != null)
                 request = String.format("requestType=%s&%s", requestType, requestParams);
@@ -856,6 +943,68 @@ public class Nxt {
             throw new NxtException(errorText, exc);
         }
         return response;
+    }
+
+    /**
+     * Certificate host name verifier
+     */
+    private static class NameVerifier implements HostnameVerifier {
+
+        /**
+         * Check if a certificate host name mismatch is allowed
+         *
+         * @param       hostname            URL host name
+         * @param       session             SSL session
+         * @return                          TRUE if the mismatch is allowed
+         */
+        @Override
+        public boolean verify(String hostname, SSLSession session) {
+            return allowMismatch;
+        }
+    }
+
+    /**
+     * Certificate trust manager to accept all certificates
+     */
+    private static class AllCertificates implements X509TrustManager {
+
+        /**
+         * Return a list of accepted certificate issuers
+         *
+         * Since we accept all certificates, we will return an empty certificate list.
+         *
+         * @return                          Empty certificate list
+         */
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+
+        /**
+         * Build the certificate path to a trusted root certificate
+         *
+         * Since we accept all certificates, we will simply return
+         *
+         * @param   certs                   Certificate chain
+         * @param   authType                Authentication type
+         */
+        @Override
+        public void checkClientTrusted(X509Certificate[] certs, String authType)
+                                            throws CertificateException {
+        }
+
+        /**
+         * Build the certificate path to a trusted root certificate
+         *
+         * Since we accept all certificates, we will simply return
+         *
+         * @param   certs                   Certificate chain
+         * @param   authType                Authentication type
+         */
+        @Override
+        public void checkServerTrusted(X509Certificate[] certs, String authType)
+                                            throws CertificateException {
+        }
     }
 
     /**

@@ -1,11 +1,11 @@
 NxtCore
 =======
 
-NxtCore provides support for accessing the Nxt API.  It communicates with a Nxt node using an HTTP connection to the API port.  Your secret phrase is never sent to the API server, so it is safe to use with a remote node.
+NxtCore provides support for accessing the Nxt API.  It communicates with a Nxt node using an HTTP/HTTPS connection to the API port.  Your secret phrase is never sent to the API server, so it is safe to use with a remote node.
 
 The SLF4J logging facility (slf4j-api) is used to log messages.  The application is responsible for providing and configuring the appropriate logger implementation (for example, slf4j-jdk).
 
-The NxtMonitor and NxtWallet projects provide examples of how to configure and use the NxtCore library.
+The NxtMint, NxtMonitor and NxtWallet projects provide examples of how to configure and use the NxtCore library.
 
 
 Build
@@ -23,7 +23,7 @@ Here are the steps for a manual build.  You will need to install Maven 3 and Jav
 Tutorial
 ========
 
-Refer to the NxtCore Javadoc for a detailed description of the classes and methods.  The NxtMint, NxtMonitor and NxtWallet source code provide examples of how to use the various API methods.  The following are some common usages.    
+Refer to the NxtCore Javadoc for a detailed description of the classes and methods.  The NxtMint, NxtMonitor and NxtWallet projects provide examples of how to use the various API methods.  The following are some common usages.    
 
 Before any NxtCore function can be used, the library must be initialized.  The Nxt.init() method sets the NRS host name/address (usually "localhost") and the server port (usually 7876).
 
