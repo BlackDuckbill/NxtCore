@@ -97,6 +97,12 @@ public class Nxt {
     /** Request function is not available */
     public static final int FUNCTION_NOT_AVAILABLE = 9;
 
+    /** Default connect timeout (milliseconds) */
+    private static final int DEFAULT_CONNECT_TIMEOUT = 5000;
+
+    /** Default read timeout (milliseconds) */
+    private static final int DEFAULT_READ_TIMEOUT = 30000;
+
     /** Nxt node host name */
     private static String nodeName = "localhost";
 
@@ -104,10 +110,10 @@ public class Nxt {
     private static int nodePort = 7876;
 
     /** Connect timeout */
-    private static int nodeConnectTimeout = 5000;
+    private static int nodeConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
     /** Read timeout */
-    private static int nodeReadTimeout = 30000;
+    private static int nodeReadTimeout = DEFAULT_READ_TIMEOUT;
 
     /** Use HTTPS instead of HTTP */
     private static boolean useHTTPS = false;
@@ -125,7 +131,7 @@ public class Nxt {
      * @param       apiPort                 Port for the node server
      */
     public static void init(String hostName, int apiPort) {
-        init(hostName, apiPort, false, false, false);
+        init(hostName, apiPort, false, false, false, DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT);
     }
 
     /**
@@ -139,15 +145,8 @@ public class Nxt {
      */
     public static void init(String hostName, int apiPort, boolean useSSL,
                                             boolean allowNameMismatch, boolean acceptAnyCertificate) {
-        nodeName = hostName;
-        nodePort = apiPort;
-        useHTTPS = useSSL;
-        allowMismatch = allowNameMismatch;
-        acceptAny = acceptAnyCertificate;
-        if (useHTTPS)
-            sslInit();
-        log.info(String.format("API node=%s, API port=%d, HTTPS=%s, Allow mismatch=%s",
-                               hostName, apiPort, useHTTPS, allowMismatch));
+        init(hostName, apiPort, useSSL, allowNameMismatch, acceptAnyCertificate,
+                                            DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT);
     }
 
     /**
@@ -185,8 +184,11 @@ public class Nxt {
         nodeReadTimeout = readTimeout;
         if (useHTTPS)
             sslInit();
-        log.info(String.format("API node=%s, API port=%d, HTTPS=%s, Allow mismatch=%s connect timeout=%d, read timeout=%d",
-                               hostName, apiPort, useHTTPS, allowMismatch, nodeConnectTimeout, nodeReadTimeout));
+        log.info(String.format("API node=%s, API port=%d\n"+
+                               "  HTTPS=%s, Allow mismatch=%s, Accept any=%s\n"+
+                               "  Connect timeout=%d, Read timeout=%d",
+                               hostName, apiPort, useHTTPS, allowMismatch, acceptAny,
+                               nodeConnectTimeout, nodeReadTimeout));
     }
 
     /**
@@ -534,6 +536,26 @@ public class Nxt {
     }
 
     /**
+     * Get recent server log messages
+     *
+     * @param       count                   Number of log messages requested
+     * @param       adminPW                 Administrator password
+     * @return                              List of log messages
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<String> getLog(int count, String adminPW) throws NxtException {
+        List<String> messages;
+        try {
+            PeerResponse response = issueRequest("getLog", String.format("count=%d&adminPassword=%s",
+                                            count, URLEncoder.encode(adminPW, "UTF-8")));
+            messages = response.getStringList("messages");
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode administrator password", exc);
+        }
+        return messages;
+    }
+
+    /**
      * Get the minting target
      *
      * @param       currencyId              Currency identifier
@@ -621,6 +643,26 @@ public class Nxt {
     public static List<String> getPeers(Peer.State state) throws NxtException {
         PeerResponse response = issueRequest("getPeers", "state="+state.name());
         return response.getStringList("peers");
+    }
+
+    /**
+     * Get server stack traces
+     *
+     * @param       depth                   Stack trace depth
+     * @param       adminPW                 Administrator password
+     * @return                              Stack traces
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static StackTraces getStackTraces(int depth, String adminPW) throws NxtException {
+        StackTraces stackTraces;
+        try {
+            PeerResponse response = issueRequest("getStackTraces", String.format("depth=%d&adminPassword=%s",
+                                            depth, URLEncoder.encode(adminPW, "UTF-8")));
+            stackTraces = new StackTraces(response);
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode administrator password", exc);
+        }
+        return stackTraces;
     }
 
     /**
