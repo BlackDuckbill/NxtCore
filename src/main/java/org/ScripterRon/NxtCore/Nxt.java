@@ -227,7 +227,8 @@ public class Nxt {
         long txId;
         try {
             PeerResponse response = issueRequest("broadcastTransaction",
-                                                 "transactionBytes="+Utils.toHexString(tx.getBytes(false)));
+                                                 "transactionBytes="+Utils.toHexString(tx.getBytes(false)),
+                                                 nodeReadTimeout);
             txId = response.getId("transaction");
             if (txId != tx.getTransactionId())
                 throw new NxtException("Incorrect transaction identifier returned for 'broadcastTransaction'");
@@ -236,6 +237,44 @@ public class Nxt {
             throw new NxtException("Invalid transaction identifier returned for 'broadcastTransaction'", exc);
         }
         return txId;
+    }
+
+    /**
+     * Register wait events
+     *
+     * @param       events                  List of events to register
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static void eventRegister(List<String> events) throws NxtException {
+        try {
+            StringBuilder sb = null;
+            for (String event : events) {
+                if (sb == null)
+                    sb = new StringBuilder();
+                else
+                    sb.append("&");
+                sb.append("event=").append(URLEncoder.encode(event, "UTF-8"));
+            }
+            issueRequest("eventRegister", (sb!=null ? sb.toString() : null), nodeReadTimeout);
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode event name", exc);
+        }
+    }
+
+    /**
+     * Wait for an event
+     *
+     * @param       timeout                 Wait timeout (seconds)
+     * @return                              Event list
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Event> eventWait(int timeout) throws NxtException {
+        List<Event> events = new ArrayList<>();
+        PeerResponse response = issueRequest("eventWait",
+                                            String.format("timeout=%d", timeout), (timeout+5)*1000);
+        List<PeerResponse> eventList = response.getObjectList("events");
+        eventList.stream().forEach(resp -> events.add(new Event(resp)));
+        return events;
     }
 
     /**
@@ -260,7 +299,8 @@ public class Nxt {
     public static Account getAccount(long accountId) throws NxtException {
         Account account;
         try {
-            PeerResponse response = issueRequest("getAccount", "account="+Utils.idToString(accountId));
+            PeerResponse response = issueRequest("getAccount", "account="+Utils.idToString(accountId),
+                                            nodeReadTimeout);
             account = new Account(response);
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid account data returned for 'getAccount'", exc);
@@ -279,7 +319,8 @@ public class Nxt {
     public static List<Long> getAccountBlocks(long accountId) throws NxtException {
         List<Long> blockList;
         try {
-            PeerResponse response = issueRequest("getAccountBlockIds", "account="+Utils.idToString(accountId));
+            PeerResponse response = issueRequest("getAccountBlockIds", "account="+Utils.idToString(accountId),
+                                            nodeReadTimeout);
             blockList = response.getIdList("blockIds");
         } catch (IdentifierException exc) {
             log.error("Invalid block identifier returned for 'getAccountBlockIds'", exc);
@@ -298,7 +339,8 @@ public class Nxt {
     public static byte[] getAccountPublicKey(long accountId) throws NxtException {
         byte[] publicKey;
         try {
-            PeerResponse response = issueRequest("getAccountPublicKey", "account="+Utils.idToString(accountId));
+            PeerResponse response = issueRequest("getAccountPublicKey", "account="+Utils.idToString(accountId),
+                                            nodeReadTimeout);
             publicKey = response.getHexString("publicKey");
         } catch (NumberFormatException exc) {
             log.error("Invalid public key returned for 'getAccountPublicKey'", exc);
@@ -337,7 +379,8 @@ public class Nxt {
     public static Alias getAlias(long aliasId) throws NxtException {
         Alias alias;
         try {
-            PeerResponse response = issueRequest("getAlias", "alias="+Utils.idToString(aliasId));
+            PeerResponse response = issueRequest("getAlias", "alias="+Utils.idToString(aliasId),
+                                            nodeReadTimeout);
             alias = new Alias(response);
         } catch (IdentifierException exc) {
             log.error("Invalid alias data returned for 'getAlias'", exc);
@@ -356,7 +399,8 @@ public class Nxt {
     public static Alias getAlias(String aliasName) throws NxtException {
         Alias alias;
         try {
-            PeerResponse response = issueRequest("getAlias", "aliasName="+URLEncoder.encode(aliasName, "UTF-8"));
+            PeerResponse response = issueRequest("getAlias", "aliasName="+URLEncoder.encode(aliasName, "UTF-8"),
+                                            nodeReadTimeout);
             alias = new Alias(response);
         } catch (IdentifierException exc) {
             log.error("Invalid alias data returned for 'getAlias'", exc);
@@ -380,7 +424,8 @@ public class Nxt {
         long aliasTimestamp = Math.max(timestamp-GENESIS_TIMESTAMP, 0);
         try {
             PeerResponse response = issueRequest("getAliases",
-                    String.format("account=%s&timestamp=%d", Utils.idToString(accountId), aliasTimestamp));
+                    String.format("account=%s&timestamp=%d", Utils.idToString(accountId), aliasTimestamp),
+                                            nodeReadTimeout);
             List<PeerResponse> aliases = (List<PeerResponse>)response.get("aliases");
             if (aliases == null) {
                 aliasList = new ArrayList<>(1);
@@ -408,7 +453,8 @@ public class Nxt {
     public static Block getBlock(long blockId) throws NxtException {
         Block block;
         try {
-            PeerResponse response = issueRequest("getBlock", "block="+Utils.idToString(blockId));
+            PeerResponse response = issueRequest("getBlock", "block="+Utils.idToString(blockId),
+                                            nodeReadTimeout);
             block = new Block(response);
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid block data returned for 'getBlock'", exc);
@@ -427,7 +473,8 @@ public class Nxt {
     public static long getBlockId(int height) throws NxtException {
         long blockId;
         try {
-            PeerResponse response = issueRequest("getBlockId", String.format("height=%d", height));
+            PeerResponse response = issueRequest("getBlockId", String.format("height=%d", height),
+                                            nodeReadTimeout);
             blockId = response.getId("block");
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid block identifier returned for 'getBlockId'", exc);
@@ -445,7 +492,7 @@ public class Nxt {
     public static ChainState getChainState() throws NxtException {
         ChainState chainState;
         try {
-            PeerResponse response = issueRequest("getBlockchainStatus", null);
+            PeerResponse response = issueRequest("getBlockchainStatus", null, nodeReadTimeout);
             chainState = new ChainState(response);
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid data returned for 'getBlockchainStatus'", exc);
@@ -464,7 +511,8 @@ public class Nxt {
     public static List<Long> getConfirmedAccountTransactions(long accountId) throws NxtException {
         List<Long> txList;
         try {
-            PeerResponse response = issueRequest("getAccountTransactionIds", "account="+Utils.idToString(accountId));
+            PeerResponse response = issueRequest("getAccountTransactionIds", "account="+Utils.idToString(accountId),
+                                            nodeReadTimeout);
             txList = response.getIdList("transactionIds");
         } catch (IdentifierException exc) {
             log.error("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
@@ -486,7 +534,8 @@ public class Nxt {
         Currency currency;
         try {
             PeerResponse response = issueRequest("getCurrency", String.format("currency=%s&includeCounts=%s",
-                                            Utils.idToString(currencyId), includeCounts?"TRUE":"FALSE"));
+                                            Utils.idToString(currencyId), includeCounts?"TRUE":"FALSE"),
+                                            nodeReadTimeout);
             currency = new Currency(response);
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid currency data returned for 'getCurrency'", exc);
@@ -508,7 +557,7 @@ public class Nxt {
         Currency currency;
         try {
             PeerResponse response = issueRequest("getCurrency", String.format("code=%s&includeCounts=%s",
-                                            currencyCode, includeCounts?"TRUE":"FALSE"));
+                                            currencyCode, includeCounts?"TRUE":"FALSE"), nodeReadTimeout);
             currency = new Currency(response);
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid currency data returned for 'getCurrency'", exc);
@@ -526,7 +575,7 @@ public class Nxt {
     public static EcBlock getEcBlock() throws NxtException {
         EcBlock ecBlock;
         try {
-            PeerResponse response = issueRequest("getECBlock", null);
+            PeerResponse response = issueRequest("getECBlock", null, nodeReadTimeout);
             ecBlock = new EcBlock(response);
         } catch (IdentifierException exc) {
             log.error("Invalid EC block data returned", exc);
@@ -547,7 +596,8 @@ public class Nxt {
         List<String> messages;
         try {
             PeerResponse response = issueRequest("getLog", String.format("count=%d&adminPassword=%s",
-                                            count, URLEncoder.encode(adminPW, "UTF-8")));
+                                            count, URLEncoder.encode(adminPW, "UTF-8")),
+                                            nodeReadTimeout);
             messages = response.getStringList("messages");
         } catch (UnsupportedEncodingException exc) {
             throw new NxtException("Unable to encode administrator password", exc);
@@ -570,7 +620,8 @@ public class Nxt {
         MintingTarget mintingTarget;
         try {
             PeerResponse response = issueRequest("getMintingTarget", String.format("currency=%s&account=%s&units=%s",
-                                            Utils.idToString(currencyId), Utils.idToString(accountId), units));
+                                            Utils.idToString(currencyId), Utils.idToString(accountId), units),
+                                            nodeReadTimeout);
             mintingTarget = new MintingTarget(response);
         } catch (IdentifierException | NumberFormatException exc){
             log.error("Invalid minting data returned for 'getMintingTarget'", exc);
@@ -591,7 +642,7 @@ public class Nxt {
     public static NodeState getNodeState() throws NxtException {
         NodeState nodeState;
         try {
-            PeerResponse response = issueRequest("getState", null);
+            PeerResponse response = issueRequest("getState", null, nodeReadTimeout);
             nodeState = new NodeState(response);
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid state data returned for 'getState'", exc);
@@ -610,7 +661,8 @@ public class Nxt {
     public static Peer getPeer(String networkAddress) throws NxtException {
         Peer peer;
         try {
-            PeerResponse response = issueRequest("getPeer", "peer="+URLEncoder.encode(networkAddress, "UTF-8"));
+            PeerResponse response = issueRequest("getPeer", "peer="+URLEncoder.encode(networkAddress, "UTF-8"),
+                                            nodeReadTimeout);
             peer = new Peer(networkAddress, response);
         } catch (NumberFormatException exc) {
             log.error("Invalid peer data returned for 'getPeer'", exc);
@@ -629,7 +681,7 @@ public class Nxt {
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static List<String> getPeers(boolean active) throws NxtException {
-        PeerResponse response = issueRequest("getPeers", "active="+(active?"true":"false"));
+        PeerResponse response = issueRequest("getPeers", "active="+(active?"true":"false"), nodeReadTimeout);
         return response.getStringList("peers");
     }
 
@@ -641,7 +693,7 @@ public class Nxt {
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static List<String> getPeers(Peer.State state) throws NxtException {
-        PeerResponse response = issueRequest("getPeers", "state="+state.name());
+        PeerResponse response = issueRequest("getPeers", "state="+state.name(), nodeReadTimeout);
         return response.getStringList("peers");
     }
 
@@ -657,7 +709,7 @@ public class Nxt {
         StackTraces stackTraces;
         try {
             PeerResponse response = issueRequest("getStackTraces", String.format("depth=%d&adminPassword=%s",
-                                            depth, URLEncoder.encode(adminPW, "UTF-8")));
+                                            depth, URLEncoder.encode(adminPW, "UTF-8")), nodeReadTimeout);
             stackTraces = new StackTraces(response);
         } catch (UnsupportedEncodingException exc) {
             throw new NxtException("Unable to encode administrator password", exc);
@@ -675,7 +727,8 @@ public class Nxt {
     public static Transaction getTransaction(long txId) throws NxtException {
         Transaction tx;
         try {
-            PeerResponse response = issueRequest("getTransaction", "transaction="+Utils.idToString(txId));
+            PeerResponse response = issueRequest("getTransaction", "transaction="+Utils.idToString(txId),
+                                            nodeReadTimeout);
             tx = new Transaction(response);
             if (tx.getTransactionId() != txId)
                 throw new NxtException("Calculated transaction identifier incorrect for tx "+Utils.idToString(txId));
@@ -696,7 +749,9 @@ public class Nxt {
     public static List<Long> getUnconfirmedAccountTransactions(long accountId) throws NxtException {
         List<Long> txList;
         try {
-            PeerResponse response = issueRequest("getUnconfirmedTransactionIds", "account="+Utils.idToString(accountId));
+            PeerResponse response = issueRequest("getUnconfirmedTransactionIds",
+                                            "account="+Utils.idToString(accountId),
+                                            nodeReadTimeout);
             txList = response.getIdList("unconfirmedTransactionIds");
         } catch (IdentifierException exc) {
             log.error("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
@@ -915,10 +970,12 @@ public class Nxt {
      *
      * @param       requestType             Request type
      * @param       requestParams           Request parameters
+     * @param       readTimeout             Read timeout (milliseconds)
      * @return                              Parsed JSON response
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    private static PeerResponse issueRequest(String requestType, String requestParams) throws NxtException {
+    private static PeerResponse issueRequest(String requestType, String requestParams, int readTimeout)
+                                            throws NxtException {
         PeerResponse response = null;
         if (nodeName == null)
             throw new NxtException("Nxt library has not been initialized");
@@ -943,7 +1000,7 @@ public class Nxt {
             conn.setDoOutput(true);
             conn.setUseCaches(false);
             conn.setConnectTimeout(nodeConnectTimeout);
-            conn.setReadTimeout(nodeReadTimeout);
+            conn.setReadTimeout(readTimeout);
             conn.connect();
             try (FilterOutputStream out = new FilterOutputStream(conn.getOutputStream())) {
                 out.write(requestBytes);
@@ -1062,7 +1119,7 @@ public class Nxt {
          * @return                          PeerResponse
          */
         @Override
-        public Map createObjectContainer() {
+        public Map<String, Object> createObjectContainer() {
             return new PeerResponse();
         }
 

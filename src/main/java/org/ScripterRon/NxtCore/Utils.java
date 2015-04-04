@@ -21,11 +21,10 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONAware;
-import org.json.simple.JSONObject;
 
 /**
  * Utility functions
@@ -230,8 +229,8 @@ public class Utils {
      */
     private static void formatJSON(StringBuilder builder, String indent, JSONAware object) {
         String itemIndent = indent+"  ";
-        if (object instanceof JSONArray) {
-            JSONArray array = (JSONArray)object;
+        if (object instanceof List) {
+            List array = (List)object;
             builder.append(indent).append("[\n");
             array.stream().forEach((value) -> {
                 if (value == null) {
@@ -254,7 +253,7 @@ public class Utils {
             builder.append(indent).append("]\n");
         } else {
             builder.append(indent).append("{\n");
-            JSONObject map = (JSONObject)object;
+            Map map = (Map)object;
             Iterator<Map.Entry> it = map.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry entry = it.next();
