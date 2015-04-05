@@ -1028,7 +1028,8 @@ public class Nxt {
                     throw new NxtException(errorText, errorCode.intValue());
                 }
             }
-            log.debug(String.format("Request complete\n%s", Utils.formatJSON(response)));
+            if (log.isDebugEnabled())
+                log.debug(String.format("Request complete\n%s", Utils.formatJSON(response)));
         } catch (MalformedURLException exc) {
             throw new NxtException("Malformed Nxt API URL", exc);
         } catch (ParseException exc) {
