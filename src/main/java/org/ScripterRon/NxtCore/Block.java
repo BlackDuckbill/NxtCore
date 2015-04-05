@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ronald Hoffman.
+ * Copyright 2014-2015 Ronald Hoffman.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,6 +130,15 @@ public class Block {
      */
     public long getBlockId() {
         return blockId;
+    }
+
+    /**
+     * Return the block identifier as a string
+     *
+     * @return                      Block identifier string
+     */
+    public String getBlockIdString() {
+        return Utils.idToString(blockId);
     }
 
     /**

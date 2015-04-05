@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ronald Hoffman.
+ * Copyright 2014-2015 Ronald Hoffman.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class Peer {
     private final String application;
 
     /** Peer is blacklisted */
-    private final boolean blacklisted;
+    private boolean blacklisted;
 
     /** Downloaded volume */
     private final long downloadedVolume;
@@ -223,6 +223,15 @@ public class Peer {
      */
     public boolean isBlacklisted() {
         return blacklisted;
+    }
+
+    /**
+     * Set blacklist status
+     *
+     * @param   blacklisted                 TRUE if peer is blacklisted
+     */
+    public void setBlacklisted(boolean blacklisted) {
+        this.blacklisted = blacklisted;
     }
 
     /**
