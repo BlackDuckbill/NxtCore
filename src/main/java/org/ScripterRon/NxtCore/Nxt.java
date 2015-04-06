@@ -684,6 +684,31 @@ public class Nxt {
     }
 
     /**
+     * Get the server forging status
+     *
+     * @param       adminPW                 Administrator password
+     * @return                              List of log messages
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Generator> getForging(String adminPW) throws NxtException {
+        List<Generator> generators;
+        try {
+            PeerResponse response = issueRequest("getForging", String.format("adminPassword=%s",
+                                            URLEncoder.encode(adminPW, "UTF-8")),
+                                            nodeReadTimeout);
+            List<PeerResponse> responseList = response.getObjectList("generators");
+            generators = new ArrayList<>(responseList.size());
+            for (PeerResponse resp : responseList)
+                generators.add(new Generator(resp));
+        } catch (IdentifierException | NumberFormatException exc) {
+            throw new NxtException("Invalid generator data returned", exc);
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode administrator password", exc);
+        }
+        return generators;
+    }
+
+    /**
      * Get recent server log messages
      *
      * @param       count                   Number of log messages requested
