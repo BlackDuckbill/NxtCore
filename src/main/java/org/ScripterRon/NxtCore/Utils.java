@@ -227,10 +227,11 @@ public class Utils {
      * @param       indent                  Output indentation
      * @param       object                  The JSON object
      */
+    @SuppressWarnings("unchecked")
     private static void formatJSON(StringBuilder builder, String indent, JSONAware object) {
         String itemIndent = indent+"  ";
         if (object instanceof List) {
-            List array = (List)object;
+            List<Object> array = (List)object;
             builder.append(indent).append("[\n");
             array.stream().forEach((value) -> {
                 if (value == null) {
@@ -253,8 +254,8 @@ public class Utils {
             builder.append(indent).append("]\n");
         } else {
             builder.append(indent).append("{\n");
-            Map map = (Map)object;
-            Iterator<Map.Entry> it = map.entrySet().iterator();
+            Map<String, Object> map = (Map)object;
+            Iterator<Map.Entry<String, Object>> it = map.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry entry = it.next();
                 builder.append(itemIndent).append("\"").append((String)entry.getKey()).append("\": ");
@@ -279,5 +280,4 @@ public class Utils {
             builder.append(indent).append("}\n");
         }
     }
-
 }

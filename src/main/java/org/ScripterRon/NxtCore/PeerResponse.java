@@ -24,6 +24,7 @@ import java.util.List;
 /**
  * PeerResponse is used for the JSON-encoded responses returned by the Nxt node
  */
+@SuppressWarnings("unchecked")
 public class PeerResponse extends JSONObject {
 
     /** Empty string list */

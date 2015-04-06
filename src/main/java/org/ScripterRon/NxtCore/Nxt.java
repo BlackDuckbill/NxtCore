@@ -426,7 +426,7 @@ public class Nxt {
             PeerResponse response = issueRequest("getAliases",
                     String.format("account=%s&timestamp=%d", Utils.idToString(accountId), aliasTimestamp),
                                             nodeReadTimeout);
-            List<PeerResponse> aliases = (List<PeerResponse>)response.get("aliases");
+            List<PeerResponse> aliases = response.getObjectList("aliases");
             if (aliases == null) {
                 aliasList = new ArrayList<>(1);
             } else {
@@ -1112,6 +1112,7 @@ public class Nxt {
      *
      * We will create PeerResponse for JSONObject and List<Object> for JSONArray
      */
+    @SuppressWarnings("unchecked")
     private static class ResponseFactory implements ContainerFactory {
 
         /**

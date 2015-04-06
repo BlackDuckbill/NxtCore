@@ -24,19 +24,19 @@
             <comments>A business-friendly OSS license</comments>
         </license>
     </licenses>
-	<developers>
-		<developer>
-			<id>ScripterRon</id>
-			<name>Ronald Hoffman</name>
-			<email>Ronald.Hoffman6@gmail.com</email>
-		</developer>
-	</developers>
-	<scm>
-		<connection>scm:git:https://github.com:ScripterRon/NxtCore.git</connection>
-		<developerConnection>scm:git:https://github.com:ScripterRon/NxtCore.git</developerConnection>
-		<url>https://github.com/ScripterRon/NxtCore</url>
-		<tag>HEAD</tag>
-	</scm>
+    <developers>
+        <developer>
+            <id>ScripterRon</id>
+            <name>Ronald Hoffman</name>
+            <email>Ronald.Hoffman6@gmail.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com:ScripterRon/NxtCore.git</connection>
+        <developerConnection>scm:git:https://github.com:ScripterRon/NxtCore.git</developerConnection>
+        <url>https://github.com/ScripterRon/NxtCore</url>
+        <tag>HEAD</tag>
+    </scm>
     <build>
         <!-- Filter resources -->
         <resources>
@@ -50,12 +50,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
+                    <version>3.3</version>
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
+                        <compilerArgs>
+                            <arg>-Xlint:unchecked</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
             <!-- Copy resources -->
