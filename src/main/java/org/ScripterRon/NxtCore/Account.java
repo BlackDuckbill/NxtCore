@@ -199,6 +199,15 @@ public class Account {
     }
 
     /**
+     * Return the guaranteed account balance
+     *
+     * @return                      Guaranteed account balance
+     */
+    public long getGuaranteedBalance() {
+        return guaranteedBalance;
+    }
+
+    /**
      * Return the forged balance.  The forged balance is included in the account
      * balance but there are no transactions representing the forged block payments.
      *

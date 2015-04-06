@@ -312,6 +312,19 @@ public class Nxt {
     /**
      * Get the account block identifiers (blocks forged by the account)
      *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              List of account blocks
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getAccountBlocks(String accountIdRs)
+                                            throws IdentifierException, NxtException {
+        return getAccountBlocks(Utils.parseAccountRsId(accountIdRs));
+    }
+
+    /**
+     * Get the account block identifiers (blocks forged by the account)
+     *
      * @param       accountId               Account identifier
      * @return                              List of account blocks
      * @throws      NxtException            Unable to issue Nxt API request
@@ -332,6 +345,19 @@ public class Nxt {
     /**
      * Get the public key for an account
      *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              Public key or null if the public key has not been set
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static byte[] getAccountPublicKey(String accountIdRs)
+                                            throws IdentifierException, NxtException {
+        return getAccountPublicKey(Utils.parseAccountRsId(accountIdRs));
+    }
+
+    /**
+     * Get the public key for an account
+     *
      * @param       accountId               Account identifier
      * @return                              Public key or null if the public key has not been set
      * @throws      NxtException            Unable to issue Nxt API request
@@ -347,6 +373,19 @@ public class Nxt {
             throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
         }
         return publicKey;
+    }
+
+    /**
+     * Get the account transaction identifiers (confirmed and unconfirmed)
+     *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              List of account transactions
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getAccountTransactions(String accountIdRs)
+                                            throws IdentifierException, NxtException {
+        return getAccountTransactions(Utils.parseAccountRsId(accountIdRs));
     }
 
     /**
@@ -414,6 +453,20 @@ public class Nxt {
     /**
      * Get the aliases assigned to the specified account that were created after the specified time.
      *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @param       timestamp               Alias timestamp (specify 0 to get all aliases)
+     * @return                              Alias list (empty list returned if no aliases are found)
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Alias> getAliases(String accountIdRs, long timestamp)
+                                            throws IdentifierException, NxtException {
+        return getAliases(Utils.parseAccountRsId(accountIdRs), timestamp);
+    }
+
+    /**
+     * Get the aliases assigned to the specified account that were created after the specified time.
+     *
      * @param       accountId               Account identifier
      * @param       timestamp               Alias timestamp (specify 0 to get all aliases)
      * @return                              Alias list (empty list returned if no aliases are found)
@@ -441,6 +494,39 @@ public class Nxt {
             throw new NxtException("Invalid alias data returned for 'getAliases'", exc);
         }
         return aliasList;
+    }
+
+    /**
+     * Get the account balance
+     *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              AccountBalance
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static AccountBalance getBalance(String accountIdRs)
+                                            throws IdentifierException, NxtException {
+        return getBalance(Utils.parseAccountRsId(accountIdRs));
+    }
+
+    /**
+     * Get the account balance
+     *
+     * @param       accountId               Account identifier
+     * @return                              AccountBalance
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static AccountBalance getBalance(long accountId) throws NxtException {
+        AccountBalance balance;
+        try {
+            PeerResponse response = issueRequest("getBalance", "account="+Utils.idToString(accountId),
+                                            nodeReadTimeout);
+            balance = new AccountBalance(accountId, response);
+        } catch (NumberFormatException exc) {
+            log.error("Invalid block data returned for 'getBlock'", exc);
+            throw new NxtException("Invalid block data returned for 'getBlock'", exc);
+        }
+        return balance;
     }
 
     /**
@@ -499,6 +585,19 @@ public class Nxt {
             throw new NxtException("Invalid state data returned for 'getBlockchainStatus'", exc);
         }
         return chainState;
+    }
+
+    /**
+     * Get the confirmed account transaction identifiers
+     *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              List of transaction identifiers
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getConfirmedAccountTransactions(String accountIdRs)
+                                            throws IdentifierException, NxtException {
+        return getConfirmedAccountTransactions(Utils.parseAccountRsId(accountIdRs));
     }
 
     /**
@@ -603,6 +702,22 @@ public class Nxt {
             throw new NxtException("Unable to encode administrator password", exc);
         }
         return messages;
+    }
+
+    /**
+     * Get the minting target
+     *
+     * @param       currencyId              Currency identifier
+     * @param       accountIdRs             RS-encoded account identifier
+     * @param       units                   Number of units to mint expressed as a whole number with
+     *                                      an implied decimal point as defined for the currency
+     * @return                              Minting target
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static MintingTarget getMintingTarget(long currencyId, String accountIdRs, long units)
+                                            throws IdentifierException, NxtException {
+        return getMintingTarget(currencyId, Utils.parseAccountRsId(accountIdRs), units);
     }
 
     /**
@@ -742,6 +857,19 @@ public class Nxt {
     /**
      * Get the unconfirmed account transaction identifiers
      *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              List of transaction identifiers
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Long> getUnconfirmedAccountTransactions(String accountIdRs)
+                                            throws IdentifierException, NxtException {
+        return getUnconfirmedAccountTransactions(Utils.parseAccountRsId(accountIdRs));
+    }
+
+    /**
+     * Get the unconfirmed account transaction identifiers
+     *
      * @param       accountId               Account identifier
      * @return                              List of transaction identifiers
      * @throws      NxtException            Unable to issue Nxt API request
@@ -824,6 +952,26 @@ public class Nxt {
     /**
      * Lease effective account balance
      *
+     * @param       recipientIdRs           RS-encoded recipient identifier
+     * @param       period                  Lease period (blocks between 1440 and 32767)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      IdentifierException     Invalid recipient identifier
+     * @throws      NxtException            Unable to lease account balance
+     */
+    public static long leaseBalance(String recipientIdRs, int period, long fee, int deadline,
+                                            byte[] referencedTxHash, String passPhrase)
+                                            throws IdentifierException, NxtException {
+        return leaseBalance(Utils.parseAccountRsId(recipientIdRs), period, fee, deadline,
+                                            referencedTxHash, passPhrase);
+    }
+
+    /**
+     * Lease effective account balance
+     *
      * @param       recipientId             Recipient identifier
      * @param       period                  Lease period (blocks between 1440 and 32767)
      * @param       fee                     Transaction fee (NQT)
@@ -851,7 +999,27 @@ public class Nxt {
     }
 
     /**
-     * Send a message
+     * Send a binary message
+     *
+     * @param       recipientIdRs           RS-encoded recipient identifier
+     * @param       message                 Message to be sent (maximum length 1000)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      IdentifierException     Invalid recipient identifier
+     * @throws      NxtException            Unable to send message
+     */
+    public static long sendMessage(String recipientIdRs, byte[] message, long fee, int deadline,
+                                            byte[] referencedTxHash, String passPhrase)
+                                            throws IdentifierException, NxtException {
+        return sendMessage(Utils.parseAccountRsId(recipientIdRs), message, fee, deadline,
+                                            referencedTxHash, passPhrase);
+    }
+
+    /**
+     * Send a binary message
      *
      * @param       recipientId             Recipient identifier
      * @param       message                 Message to be sent (maximum length 1000)
@@ -863,7 +1031,8 @@ public class Nxt {
      * @throws      NxtException            Unable to send message
      */
     public static long sendMessage(long recipientId, byte[] message, long fee, int deadline,
-                                byte[] referencedTxHash, String passPhrase) throws NxtException {
+                                            byte[] referencedTxHash, String passPhrase)
+                                            throws NxtException {
         long txId;
         try {
             TransactionType txType = TransactionType.Messaging.ARBITRARY_MESSAGE;
@@ -880,7 +1049,27 @@ public class Nxt {
     }
 
     /**
-     * Send a message
+     * Send a text message
+     *
+     * @param       recipientIdRs           RS-encoded recipient identifier
+     * @param       message                 Message to be sent (maximum length 1000)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      IdentifierException     Invalid recipient identifier
+     * @throws      NxtException            Unable to send message
+     */
+    public static long sendMessage(String recipientIdRs, String message, long fee, int deadline,
+                                            byte[] referencedTxHash, String passPhrase)
+                                            throws IdentifierException, NxtException {
+        return sendMessage(Utils.parseAccountRsId(recipientIdRs), message, fee, deadline,
+                                            referencedTxHash, passPhrase);
+    }
+
+    /**
+     * Send a text message
      *
      * @param       recipientId             Recipient identifier
      * @param       message                 Message to be sent (maximum length 1000)
@@ -892,7 +1081,8 @@ public class Nxt {
      * @throws      NxtException            Unable to send message
      */
     public static long sendMessage(long recipientId, String message, long fee, int deadline,
-                                byte[] referencedTxHash, String passPhrase) throws NxtException {
+                                            byte[] referencedTxHash, String passPhrase)
+                                            throws NxtException {
         long txId;
         try {
             TransactionType txType = TransactionType.Messaging.ARBITRARY_MESSAGE;
@@ -911,6 +1101,26 @@ public class Nxt {
     /**
      * Send Nxt
      *
+     * @param       recipientIdRs           RS-encoded recipient identifier
+     * @param       amount                  Amount to send (NQT)
+     * @param       fee                     Transaction fee (NQT)
+     * @param       deadline                Transaction deadline (minutes between 1 and 1440)
+     * @param       referencedTxHash        Referenced transaction hash or null
+     * @param       passPhrase              Account secret key
+     * @return                              Transaction identifier
+     * @throws      IdentifierException     Invalid recipient identifier
+     * @throws      NxtException            Unable to send Nxt
+     */
+    public static long sendNxt(String recipientIdRs, long amount, long fee, int deadline,
+                                            byte[] referencedTxHash, String passPhrase)
+                                            throws IdentifierException, NxtException {
+        return sendNxt(Utils.parseAccountRsId(recipientIdRs), amount, fee, deadline,
+                                            referencedTxHash, passPhrase);
+    }
+
+    /**
+     * Send Nxt
+     *
      * @param       recipientId             Recipient identifier
      * @param       amount                  Amount to send (NQT)
      * @param       fee                     Transaction fee (NQT)
@@ -920,8 +1130,9 @@ public class Nxt {
      * @return                              Transaction identifier
      * @throws      NxtException            Unable to send Nxt
      */
-    public static long sendNxt(long recipientId, long amount, long fee, int deadline, byte[] referencedTxHash,
-                               String passPhrase) throws NxtException {
+    public static long sendNxt(long recipientId, long amount, long fee, int deadline,
+                                            byte[] referencedTxHash, String passPhrase)
+                                            throws NxtException {
         long txId;
         try {
             TransactionType txType = TransactionType.Payment.ORDINARY;
