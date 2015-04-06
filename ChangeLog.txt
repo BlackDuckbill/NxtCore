@@ -3,10 +3,11 @@ NxtCore Change Log
 
 Version 1.5.0
   - EventRegister and EventWait support
-  - Peer.setBlacklisted()
-  - Block.getBlockIdString()
-  - Nxt.getBalance() support
-  - Nxt.getForging() support
+  - Block.getBaseTarget() parsing error
+  - Block.getBlockIdString() added
+  - Nxt.getBalance() added
+  - Nxt.getForging() added
+  - Peer.setBlacklisted() added
 
 
 Version 1.4.0

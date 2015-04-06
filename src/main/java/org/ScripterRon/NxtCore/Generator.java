@@ -29,8 +29,8 @@ public class Generator {
     /** Remaining deadline (seconds) */
     private final long remaining;
 
-    /** Hit */
-    private final long hit;
+    /** Hit time */
+    private final long hitTime;
 
     /**
      * Create the generator from the 'getForging' API response
@@ -43,7 +43,7 @@ public class Generator {
         accountId = response.getId("account");
         deadline = response.getLong("deadline");
         remaining = response.getLong("remaining");
-        hit = response.getLong("hitTime");
+        hitTime = response.getLong("hitTime");
     }
 
     /**
@@ -83,11 +83,11 @@ public class Generator {
     }
 
     /**
-     * Return the forging hit value
+     * Return the forging hit time in seconds since the epoch (January 1, 1970)
      *
-     * @return                      Hit value
+     * @return                      Hit time
      */
     public long getHit() {
-        return hit;
+        return hitTime + Nxt.GENESIS_TIMESTAMP;
     }
 }
