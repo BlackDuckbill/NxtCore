@@ -100,7 +100,7 @@ public class Block {
         this.payloadLength = response.getInt("payloadLength");
         this.payloadHash = response.getHexString("payloadHash");
         this.height = response.getInt("height");
-        this.baseTarget = response.getLong("baseTarget");
+        this.baseTarget = response.getLongString("baseTarget");
         this.txCount = response.getInt("numberOfTransactions");
         this.txList = response.getIdList("transactions");
     }
