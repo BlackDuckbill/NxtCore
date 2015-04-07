@@ -242,20 +242,35 @@ public class Nxt {
     /**
      * Register wait events
      *
+     * An existing event list can be modified by specifying 'addEvents=true' or 'removeEvents=true'.
+     * A new event list will be created if both parameters are false.  An existing event listener
+     * will be canceled if all of the registered events are removed.
+     *
      * @param       events                  List of events to register
+     * @param       addEvents               TRUE to add events to an existing event list
+     * @param       removeEvents            TRUE to remove events from an existing event list
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static void eventRegister(List<String> events) throws NxtException {
+    public static void eventRegister(List<String> events, boolean addEvents, boolean removeEvents)
+                                            throws NxtException {
         try {
-            StringBuilder sb = null;
+            StringBuilder sb = new StringBuilder(1000);
             for (String event : events) {
-                if (sb == null)
-                    sb = new StringBuilder();
-                else
+                if (sb.length() > 0)
                     sb.append("&");
                 sb.append("event=").append(URLEncoder.encode(event, "UTF-8"));
             }
-            issueRequest("eventRegister", (sb!=null ? sb.toString() : null), nodeReadTimeout);
+            if (addEvents) {
+                if (sb.length() > 0)
+                    sb.append("&");
+                sb.append("add=true");
+            }
+            if (removeEvents) {
+                if (sb.length() > 0)
+                    sb.append("&");
+                sb.append("remove=true");
+            }
+            issueRequest("eventRegister", (sb.length()>0 ? sb.toString() : null), nodeReadTimeout);
         } catch (UnsupportedEncodingException exc) {
             throw new NxtException("Unable to encode event name", exc);
         }
