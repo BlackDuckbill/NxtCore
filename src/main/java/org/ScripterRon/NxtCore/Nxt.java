@@ -217,6 +217,53 @@ public class Nxt {
     }
 
     /**
+     * Add a peer to the server peer list and connect to the peer
+     *
+     * @param       announcedAddress        The announced address of the peer
+     * @param       adminPW                 Administrator password
+     * @return                              Peer
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static Peer addPeer(String announcedAddress, String adminPW) throws NxtException {
+        Peer peer;
+        try {
+            PeerResponse response = issueRequest("addPeer", String.format("peer=%s&adminPassword=%s",
+                                            URLEncoder.encode(announcedAddress, "UTF-8"),
+                                            URLEncoder.encode(adminPW, "UTF-8")),
+                                            nodeReadTimeout);
+            peer = new Peer(response.getString("address"), response);
+        } catch (NumberFormatException exc) {
+            log.error("Invalid peer data returned for 'addPeer'", exc);
+            throw new NxtException("Invalid peer data returned for 'addPeer'", exc);
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode request parameters", exc);
+        }
+        return peer;
+    }
+
+    /**
+     * Blacklist a peer
+     *
+     * @param       announcedAddress        The announced address of the peer
+     * @param       adminPW                 Administrator password
+     * @return                              TRUE if the peer was blacklisted
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static boolean blacklistPeer(String announcedAddress, String adminPW) throws NxtException {
+        boolean done;
+        try {
+            PeerResponse response = issueRequest("blacklistPeer", String.format("peer=%s&adminPassword=%s",
+                                            URLEncoder.encode(announcedAddress, "UTF-8"),
+                                            URLEncoder.encode(adminPW, "UTF-8")),
+                                            nodeReadTimeout);
+            done = response.getBoolean("done");
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode request parameters", exc);
+        }
+        return done;
+    }
+
+    /**
      * Broadcast a signed transaction
      *
      * @param       tx                      Signed transaction

@@ -1,6 +1,12 @@
 NxtCore Change Log
 ==================
 
+Version 1.6.0
+  - Add 'addEvents' and 'removeEvents' parameters to EventRegister
+  - Nxt.addPeer() added
+  - Nxt.blacklistPeer() added
+
+
 Version 1.5.0
   - EventRegister and EventWait support
   - Block.getBaseTarget() parsing error
