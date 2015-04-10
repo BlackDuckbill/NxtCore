@@ -69,12 +69,11 @@ public class Peer {
     /**
      * Create a peer
      *
-     * @param       networkAddress          Peer network address
      * @param       response                Response for 'getPeer' request
      * @throws      NumberFormatException   Invalid numeric string
      */
-    public Peer(String networkAddress, PeerResponse response) throws NumberFormatException {
-        this.networkAddress = networkAddress;
+    public Peer(PeerResponse response) throws NumberFormatException {
+        networkAddress = response.getString("address");
         announcedAddress = response.getString("announcedAddress");
         application = response.getString("application");
         blacklisted = response.getBoolean("blacklisted");

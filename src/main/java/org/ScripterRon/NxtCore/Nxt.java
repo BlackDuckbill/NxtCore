@@ -40,6 +40,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -233,7 +234,7 @@ public class Nxt {
                                             URLEncoder.encode(announcedAddress, "UTF-8"),
                                             URLEncoder.encode(adminPW, "UTF-8")),
                                             nodeReadTimeout);
-            peer = new Peer(response.getString("address"), response);
+            peer = new Peer(response);
         } catch (NumberFormatException exc) {
             log.error("Invalid peer data returned for 'addPeer'", exc);
             throw new NxtException("Invalid peer data returned for 'addPeer'", exc);
@@ -648,6 +649,37 @@ public class Nxt {
     }
 
     /**
+     * Get a list of blocks
+     *
+     * @param       firstIndex              Start index (chain head is index 0)
+     * @param       lastIndex               Stop index
+     * @param       includeTransactions     TRUE to include the block transactions or
+     *                                      FALSE to include just the transaction identifiers
+     * @param       adminPW                 Administrator password
+     * @return                              Block list
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Block> getBlocks(int firstIndex, int lastIndex, boolean includeTransactions, String adminPW)
+                                            throws NxtException {
+        List<Block> blocks = new ArrayList<>(Math.max(lastIndex-firstIndex+1, 1));
+        try {
+            PeerResponse response = issueRequest("getBlocks",
+                    String.format("firstIndex=%d&lastIndex=%d&includeTransactions=%s&adminPassword=%s",
+                                  firstIndex, lastIndex, includeTransactions, URLEncoder.encode(adminPW, "UTF-8")),
+                    nodeReadTimeout);
+            List<PeerResponse> blockResponses = response.getObjectList("blocks");
+            for (PeerResponse blockResponse : blockResponses)
+                blocks.add(new Block(blockResponse));
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Invalid block data returned for 'getBlocks'", exc);
+            throw new NxtException("Invalid block data returned for 'getBlocks'", exc);
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode administrator password", exc);
+        }
+        return blocks;
+    }
+
+    /**
      * Get the current block chain state
      *
      * @return                              Chain state
@@ -881,7 +913,7 @@ public class Nxt {
         try {
             PeerResponse response = issueRequest("getPeer", "peer="+URLEncoder.encode(networkAddress, "UTF-8"),
                                             nodeReadTimeout);
-            peer = new Peer(networkAddress, response);
+            peer = new Peer(response);
         } catch (NumberFormatException exc) {
             log.error("Invalid peer data returned for 'getPeer'", exc);
             throw new NxtException("Invalid peer data returned for 'getPeer'", exc);
@@ -894,7 +926,8 @@ public class Nxt {
     /**
      * Get the current peer list
      *
-     * @param       active                  TRUE to return just the peers in the active list (CONNECTED or DISCONNECTED)
+     * @param       active                  TRUE to return just the peers in the active list
+     *                                      (CONNECTED or DISCONNECTED) or FALSE to return all peers
      * @return                              List of network addresses (IPv6 addresses are enclosed in brackets)
      * @throws      NxtException            Unable to issue Nxt API request
      */
@@ -913,6 +946,33 @@ public class Nxt {
     public static List<String> getPeers(Peer.State state) throws NxtException {
         PeerResponse response = issueRequest("getPeers", "state="+state.name(), nodeReadTimeout);
         return response.getStringList("peers");
+    }
+
+    /**
+     * Get the current peer information
+     *
+     * @param       active                  TRUE to return just the peers in the active list
+     *                                      (CONNECTED or DISCONNECTED0 or FALSE to return all peers
+     * @param       state                   Return peers in this state.  The state will be ignored
+     *                                      if active peers are requested (active=true)
+     * @return                              Peer list
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Peer> getPeers(boolean active, Peer.State state) throws NxtException {
+        List<Peer> peers = new LinkedList<>();
+        try {
+            PeerResponse response = issueRequest("getPeers",
+                                                 String.format("active=%s&state=%s&includePeerInfo=true",
+                                                               active, state.name()),
+                                                 nodeReadTimeout);
+            List<PeerResponse> peerResponses = response.getObjectList("peers");
+            for (PeerResponse peerResponse : peerResponses)
+                peers.add(new Peer(peerResponse));
+        } catch (NumberFormatException exc) {
+            log.error("Invalid peer data returned for 'getPeers'", exc);
+            throw new NxtException("Invalid peer data returned for 'getPeers'", exc);
+        }
+        return peers;
     }
 
     /**
