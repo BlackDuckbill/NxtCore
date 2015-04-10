@@ -23,9 +23,10 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FilterOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
@@ -42,6 +43,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.zip.GZIPInputStream;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -1293,20 +1295,21 @@ public class Nxt {
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             conn.setRequestProperty("Cache-Control", "no-cache, no-store");
-            conn.setRequestProperty("Content-Length", String.format("%d", requestBytes.length));
+            conn.setRequestProperty("Content-Length", Integer.toString(requestBytes.length));
+            conn.setRequestProperty("Accept-Encoding", "gzip");
             conn.setDoInput(true);
             conn.setDoOutput(true);
             conn.setUseCaches(false);
             conn.setConnectTimeout(nodeConnectTimeout);
             conn.setReadTimeout(readTimeout);
             conn.connect();
-            try (FilterOutputStream out = new FilterOutputStream(conn.getOutputStream())) {
+            try (OutputStream out = conn.getOutputStream()) {
                 out.write(requestBytes);
                 out.flush();
                 int code = conn.getResponseCode();
                 if (code != HttpURLConnection.HTTP_OK) {
                     String errorText = String.format("Response code %d for %s request\n  %s",
-                                                         code, requestType, conn.getResponseMessage());
+                                                     code, requestType, conn.getResponseMessage());
                     log.error(errorText);
                     throw new NxtException(errorText);
                 }
@@ -1314,9 +1317,15 @@ public class Nxt {
             //
             // Parse the response
             //
-            try (InputStreamReader in = new InputStreamReader(conn.getInputStream(), "UTF-8")) {
+            String contentEncoding = conn.getHeaderField("Content-Encoding");
+            try (InputStream in = conn.getInputStream()) {
+                InputStreamReader reader;
+                if ("gzip".equals(contentEncoding))
+                    reader = new InputStreamReader(new GZIPInputStream(in), "UTF-8");
+                else
+                    reader = new InputStreamReader(in, "UTF-8");
                 JSONParser parser = new JSONParser();
-                response = (PeerResponse)parser.parse(in, containerFactory);
+                response = (PeerResponse)parser.parse(reader, containerFactory);
                 Long errorCode = (Long)response.get("errorCode");
                 if (errorCode != null) {
                     String errorDesc = (String)response.get("errorDescription");
@@ -1327,7 +1336,8 @@ public class Nxt {
                 }
             }
             if (log.isDebugEnabled())
-                log.debug(String.format("Request complete\n%s", Utils.formatJSON(response)));
+                log.debug(String.format("Request complete: Content-Encoding %s\n%s",
+                                        contentEncoding, Utils.formatJSON(response)));
         } catch (MalformedURLException exc) {
             throw new NxtException("Malformed Nxt API URL", exc);
         } catch (ParseException exc) {
