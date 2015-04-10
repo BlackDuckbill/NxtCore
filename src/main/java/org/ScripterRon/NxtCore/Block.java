@@ -15,6 +15,8 @@
  */
 package org.ScripterRon.NxtCore;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -73,8 +75,11 @@ public class Block {
     /** Transaction count */
     private final int txCount;
 
+    /** Block transactions identifiers */
+    private final List<Long> txIdList;
+
     /** Block transactions */
-    private final List<Long> txList;
+    private final List<Transaction> txList;
 
     /**
      * Create the block from the JSON response for 'getBlock'
@@ -85,24 +90,48 @@ public class Block {
      * @throws      NxtException            Invalid block format
      */
     public Block(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
-        this.version = response.getInt("version");
-        this.blockId = response.getId("block");
-        this.previousBlockId = response.getId("previousBlock");
-        this.nextBlockId = response.getId("nextBlock");
-        this.totalAmount = response.getLongString("totalAmountNQT");
-        this.totalFee = response.getLongString("totalFeeNQT");
-        this.timestamp = response.getInt("timestamp");
-        this.generatorId = response.getId("generator");
-        this.generatorRsId = response.getString("generatorRS");
-        this.generatorPublicKey = response.getHexString("generatorPublicKey");
-        this.generationSignature = response.getHexString("generationSignature");
-        this.blockSignature = response.getHexString("blockSignature");
-        this.payloadLength = response.getInt("payloadLength");
-        this.payloadHash = response.getHexString("payloadHash");
-        this.height = response.getInt("height");
-        this.baseTarget = response.getLongString("baseTarget");
-        this.txCount = response.getInt("numberOfTransactions");
-        this.txList = response.getIdList("transactions");
+        //
+        // Set the block fields
+        //
+        version = response.getInt("version");
+        blockId = response.getId("block");
+        previousBlockId = response.getId("previousBlock");
+        nextBlockId = response.getId("nextBlock");
+        totalAmount = response.getLongString("totalAmountNQT");
+        totalFee = response.getLongString("totalFeeNQT");
+        timestamp = response.getInt("timestamp");
+        generatorId = response.getId("generator");
+        generatorRsId = response.getString("generatorRS");
+        generatorPublicKey = response.getHexString("generatorPublicKey");
+        generationSignature = response.getHexString("generationSignature");
+        blockSignature = response.getHexString("blockSignature");
+        payloadLength = response.getInt("payloadLength");
+        payloadHash = response.getHexString("payloadHash");
+        height = response.getInt("height");
+        baseTarget = response.getLongString("baseTarget");
+        txCount = response.getInt("numberOfTransactions");
+        //
+        // The block transactions are either a list of transaction identifiers
+        // or a list of transactions, depending on the value of the 'includeTransactions'
+        // parameter for the 'getBlock' request
+        //
+        Object param = response.getObject("transactions");
+        if (param == null || !(param instanceof List) || ((List)param).isEmpty()) {
+            txIdList = Collections.emptyList();
+            txList = Collections.emptyList();
+        } else if (((List)param).get(0) instanceof PeerResponse) {
+            List<PeerResponse> txResponses = response.getObjectList("transactions");
+            txIdList = new ArrayList<>(txResponses.size());
+            txList = new ArrayList<>(txResponses.size());
+            for (PeerResponse txResponse : txResponses) {
+                Transaction tx = new Transaction(txResponse);
+                txList.add(tx);
+                txIdList.add(tx.getTransactionId());
+            }
+        } else {
+            txIdList = response.getIdList("transactions");
+            txList = Collections.emptyList();
+        }
     }
 
     /**
@@ -196,11 +225,23 @@ public class Block {
     }
 
     /**
-     * Return the transaction list
+     * Return the transaction identifier list.  The list will be empty if there
+     * are no transactions in the block.
      *
      * @return                      List of transaction identifiers
      */
     public List<Long> getTransactionList() {
+        return txIdList;
+    }
+
+    /**
+     * Return the block transactions.  The list will be empty of there are no
+     * transactions in the block or if the 'getBlock' request did not include
+     * transactions.
+     *
+     * @return                      List of transactions
+     */
+    public List<Transaction> getTransactions() {
         return txList;
     }
 

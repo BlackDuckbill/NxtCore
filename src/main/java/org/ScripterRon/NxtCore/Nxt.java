@@ -601,9 +601,23 @@ public class Nxt {
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static Block getBlock(long blockId) throws NxtException {
+        return getBlock(blockId, false);
+    }
+
+    /** Get a block
+     *
+     * @param       blockId                 Block identifier
+     * @param       includeTransactions     TRUE to include the block transactions or
+     *                                      FALSE to include just the transaction identifiers
+     * @return                              Block
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static Block getBlock(long blockId, boolean includeTransactions) throws NxtException {
         Block block;
         try {
-            PeerResponse response = issueRequest("getBlock", "block="+Utils.idToString(blockId),
+            PeerResponse response = issueRequest("getBlock",
+                                            String.format("block=%s&includeTransactions=%s",
+                                                          Utils.idToString(blockId), includeTransactions),
                                             nodeReadTimeout);
             block = new Block(response);
         } catch (IdentifierException | NumberFormatException exc) {

@@ -44,6 +44,17 @@ public class PeerResponse extends JSONObject {
     }
 
     /**
+     * Return a JSON object
+     *
+     * @param       key                     JSON key
+     * @return                              Object or null if key not found
+     */
+    public Object getObject(String key) {
+        Object value = get(key);
+        return (value instanceof List ? (List<Object>)value : (PeerResponse)value);
+    }
+
+    /**
      * Return a boolean value
      *
      * @param       key                     JSON key
