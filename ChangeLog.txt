@@ -2,6 +2,7 @@ NxtCore Change Log
 ==================
 
 Version 1.6.0
+  - New transaction types for NRS 1.5
   - Support HTTP response compression
   - Support 'addEvents' and 'removeEvents' parameters for eventRegister API
   - Support 'includeTransactions' parameter for getBlock API

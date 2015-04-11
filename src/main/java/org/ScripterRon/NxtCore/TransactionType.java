@@ -45,6 +45,8 @@ public abstract class TransactionType {
     public static final byte SUBTYPE_MESSAGING_ALIAS_BUY = 7;
     /** Delete alias */
     public static final byte SUBTYPE_MESSAGING_ALIAS_DELETE = 8;
+    /** Phasing vote casting */
+    public static final byte SUBTYPE_MESSAGING_PHASING_VOTE_CASTING = 9;
 
     /** Colored coin transaction (Asset Exchange) */
     public static final byte TYPE_COLORED_COINS = 2;
@@ -86,7 +88,7 @@ public abstract class TransactionType {
     public static final byte TYPE_ACCOUNT_CONTROL = 4;
     /** Lease effective balance */
     public static final byte SUBTYPE_ACCOUNT_CONTROL_EFFECTIVE_BALANCE_LEASING = 0;
-    
+
     /** Monetary system transaction */
     public static final byte TYPE_MONETARY_SYSTEM = 5;
     /** Issue currency */
@@ -153,6 +155,9 @@ public abstract class TransactionType {
                         break;
                     case SUBTYPE_MESSAGING_ALIAS_DELETE:
                         txType = Messaging.ALIAS_DELETE;
+                        break;
+                    case SUBTYPE_MESSAGING_PHASING_VOTE_CASTING:
+                        txType = Messaging.PHASING_VOTE_CASTING;
                         break;
                 }
                 break;
@@ -586,6 +591,31 @@ public abstract class TransactionType {
             @Override
             public String getDescription() {
                 return "Vote casting";
+            }
+        };
+
+        /**
+         * Phasing vote casting
+         */
+        public static final TransactionType PHASING_VOTE_CASTING = new Messaging() {
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_MESSAGING_PHASING_VOTE_CASTING;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Phasing vote casting";
             }
         };
 
@@ -1338,7 +1368,7 @@ public abstract class TransactionType {
             @Override
             public Attachment loadAttachment(PeerResponse response) throws IdentifierException, NumberFormatException, NxtException {
                 return new CurrencyMinting(response);
-            }            
+            }
         };
 
         /**
@@ -1365,5 +1395,5 @@ public abstract class TransactionType {
                 return "Delete currency";
             }
         };
-    }    
+    }
 }
