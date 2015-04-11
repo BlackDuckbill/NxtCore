@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ronald Hoffman.
+ * Copyright 2014-2015 Ronald Hoffman.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,6 +206,56 @@ public class Utils {
             value = ctrl;
         }
         return value;
+    }
+
+    /**
+     * Convert from NQT to a decimal string (1 NQT = 0.00000001 NXT)
+     * We will keep at least 4 decimal places in the result.
+     *
+     * @param       value           Value to be converted
+     * @return                      A formatted decimal string
+     */
+    public static String nqtToString(long value) {
+        //
+        // Format the amount
+        //
+        long bvalue = value;
+        boolean negative = (bvalue < 0);
+        if (negative)
+            bvalue = -bvalue;
+        //
+        // Get the amount as a formatted string with 8 decimal places
+        //
+        String valueString = String.format("%09d", bvalue);
+        int decimalPoint = valueString.length() - 8;
+        //
+        // Drop tailing zeros beyond 4 decimal places
+        //
+        int toDelete = 0;
+        for (int i=valueString.length()-1; i>decimalPoint+3; i--) {
+            if (valueString.charAt(i) != '0')
+                break;
+            toDelete++;
+        }
+        //
+        // Create the formatted decimal string
+        //
+        StringBuilder formatted = new StringBuilder(valueString.substring(0, valueString.length()-toDelete));
+        formatted.insert(decimalPoint, '.');
+        //
+        // Insert commas as needed
+        //
+        int index = decimalPoint;
+        while (index > 3) {
+            index -= 3;
+            formatted.insert(index, ',');
+        }
+        //
+        // Add the sign if the value is negative
+        //
+        if (negative)
+            formatted.insert(0, '-');
+        return formatted.toString();
     }
 
     /**

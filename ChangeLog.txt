@@ -2,9 +2,14 @@ NxtCore Change Log
 ==================
 
 Version 1.6.0
-  - Add 'addEvents' and 'removeEvents' parameters to EventRegister
+  - Support HTTP response compression
+  - Support 'addEvents' and 'removeEvents' parameters for eventRegister API
+  - Support 'includeTransactions' parameter for getBlock API
+  - Support 'includePeerInfo' parameter for getPeers API
   - Nxt.addPeer() added
   - Nxt.blacklistPeer() added
+  - Nxt.getBlocks() added
+  - Utils.nqtToString() added
 
 
 Version 1.5.0
