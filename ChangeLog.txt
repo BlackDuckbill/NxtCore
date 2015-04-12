@@ -10,6 +10,7 @@ Version 1.6.0
   - Nxt.addPeer() added
   - Nxt.blacklistPeer() added
   - Nxt.getBlocks() added
+  - Nxt.setLogging() added
   - Utils.nqtToString() added
 
 

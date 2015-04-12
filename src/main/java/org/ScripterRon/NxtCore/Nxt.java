@@ -1340,6 +1340,35 @@ public class Nxt {
     }
 
     /**
+     * Set server logging
+     *
+     * @param       logLevel                Log level or null if level unchanged
+     * @param       eventList               List of communication events or null if event mask unchanged
+     * @param       adminPW                 Administrator password
+     * @throws      NxtException            Unable to set server logging
+     */
+    public static void setLogging(String logLevel, List<String> eventList, String adminPW) throws NxtException {
+        try {
+            StringBuilder sb = new StringBuilder();
+            if (logLevel != null && logLevel.length() > 0)
+                sb.append("logLevel=").append(logLevel);
+            if (eventList != null && !eventList.isEmpty()) {
+                eventList.stream().forEach((event) -> {
+                    if (sb.length() != 0)
+                        sb.append("&");
+                    sb.append("communicationEvent=").append(event);
+                });
+            }
+            if (sb.length() != 0) {
+                sb.append("&adminPassword=").append(URLEncoder.encode(adminPW, "UTF-8"));
+                issueRequest("setLogging", sb.toString(), nodeReadTimeout);
+            }
+        } catch (UnsupportedEncodingException exc) {
+            throw new NxtException("Unable to encode administrator password", exc);
+        }
+    }
+
+    /**
      * Issue the Nxt API request and return the parsed JSON response
      *
      * @param       requestType             Request type
