@@ -3,14 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.ScripterRon</groupId>
     <artifactId>NxtCore</artifactId>
-    <version>1.6.0</version>
+    <version>2.0.0</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <json.version>1.1.1</json.version>
-        <slf4j.version>1.7.7</slf4j.version>
+        <slf4j.version>1.7.12</slf4j.version>
     </properties>
     <name>Java Nxt Core Library</name>
     <url>https://github.com/ScripterRon/NxtCore</url>
@@ -114,21 +113,6 @@
         </plugins>
     </build>
     <dependencies>
-        <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>${json.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>hamcrest-core</artifactId>
-                    <groupId>org.hamcrest</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>junit</artifactId>
-                    <groupId>junit</groupId>
-                </exclusion>
-            </exclusions>            
-        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>

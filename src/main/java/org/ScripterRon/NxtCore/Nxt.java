@@ -15,11 +15,6 @@
  */
 package org.ScripterRon.NxtCore;
 
-import org.json.simple.JSONArray;
-import org.json.simple.parser.ContainerFactory;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
@@ -59,9 +55,6 @@ public class Nxt {
 
     /** Logger instance */
     public static final Logger log = LoggerFactory.getLogger("org.ScripterRon.NxtCore");
-
-    /** Response container factory */
-    private static final ContainerFactory containerFactory = new ResponseFactory();
 
     /** Genesis block timestamp (November 24, 2013 12:00:00 UTC) */
     public static final long GENESIS_TIMESTAMP;
@@ -337,8 +330,8 @@ public class Nxt {
         List<Event> events = new ArrayList<>();
         PeerResponse response = issueRequest("eventWait",
                                             String.format("timeout=%d", timeout), (timeout+5)*1000);
-        List<PeerResponse> eventList = response.getObjectList("events");
-        eventList.stream().forEach(resp -> events.add(new Event(resp)));
+        List<Map<String, Object>> eventList = response.getObjectList("events");
+        eventList.stream().forEach(resp -> events.add(new Event(new PeerResponse(resp))));
         return events;
     }
 
@@ -544,13 +537,13 @@ public class Nxt {
             PeerResponse response = issueRequest("getAliases",
                     String.format("account=%s&timestamp=%d", Utils.idToString(accountId), aliasTimestamp),
                                             nodeReadTimeout);
-            List<PeerResponse> aliases = response.getObjectList("aliases");
+            List<Map<String, Object>> aliases = response.getObjectList("aliases");
             if (aliases == null) {
                 aliasList = new ArrayList<>(1);
             } else {
                 aliasList = new ArrayList<>(aliases.size());
-                for (PeerResponse aliasResponse : aliases) {
-                    Alias alias = new Alias(aliasResponse);
+                for (Map<String, Object> aliasResponse : aliases) {
+                    Alias alias = new Alias(new PeerResponse(aliasResponse));
                     aliasList.add(alias);
                 }
             }
@@ -667,9 +660,9 @@ public class Nxt {
                     String.format("firstIndex=%d&lastIndex=%d&includeTransactions=%s&adminPassword=%s",
                                   firstIndex, lastIndex, includeTransactions, URLEncoder.encode(adminPW, "UTF-8")),
                     nodeReadTimeout);
-            List<PeerResponse> blockResponses = response.getObjectList("blocks");
-            for (PeerResponse blockResponse : blockResponses)
-                blocks.add(new Block(blockResponse));
+            List<Map<String, Object>> blockResponses = response.getObjectList("blocks");
+            for (Map<String, Object> blockResponse : blockResponses)
+                blocks.add(new Block(new PeerResponse(blockResponse)));
         } catch (IdentifierException | NumberFormatException exc) {
             log.error("Invalid block data returned for 'getBlocks'", exc);
             throw new NxtException("Invalid block data returned for 'getBlocks'", exc);
@@ -806,10 +799,10 @@ public class Nxt {
             PeerResponse response = issueRequest("getForging", String.format("adminPassword=%s",
                                             URLEncoder.encode(adminPW, "UTF-8")),
                                             nodeReadTimeout);
-            List<PeerResponse> responseList = response.getObjectList("generators");
+            List<Map<String, Object>> responseList = response.getObjectList("generators");
             generators = new ArrayList<>(responseList.size());
-            for (PeerResponse resp : responseList)
-                generators.add(new Generator(resp));
+            for (Map<String, Object> resp : responseList)
+                generators.add(new Generator(new PeerResponse(resp)));
         } catch (IdentifierException | NumberFormatException exc) {
             throw new NxtException("Invalid generator data returned", exc);
         } catch (UnsupportedEncodingException exc) {
@@ -965,9 +958,9 @@ public class Nxt {
                                                  String.format("active=%s&state=%s&includePeerInfo=true",
                                                                active, state.name()),
                                                  nodeReadTimeout);
-            List<PeerResponse> peerResponses = response.getObjectList("peers");
-            for (PeerResponse peerResponse : peerResponses)
-                peers.add(new Peer(peerResponse));
+            List<Map<String, Object>> peerResponses = response.getObjectList("peers");
+            for (Map<String, Object> peerResponse : peerResponses)
+                peers.add(new Peer(new PeerResponse(peerResponse)));
         } catch (NumberFormatException exc) {
             log.error("Invalid peer data returned for 'getPeers'", exc);
             throw new NxtException("Invalid peer data returned for 'getPeers'", exc);
@@ -1377,6 +1370,7 @@ public class Nxt {
      * @return                              Parsed JSON response
      * @throws      NxtException            Unable to issue Nxt API request
      */
+    @SuppressWarnings("unchecked")
     private static PeerResponse issueRequest(String requestType, String requestParams, int readTimeout)
                                             throws NxtException {
         PeerResponse response = null;
@@ -1427,25 +1421,27 @@ public class Nxt {
                     reader = new InputStreamReader(new GZIPInputStream(in), "UTF-8");
                 else
                     reader = new InputStreamReader(in, "UTF-8");
-                JSONParser parser = new JSONParser();
-                response = (PeerResponse)parser.parse(reader, containerFactory);
+                Object respObject = JSONParser.parse(reader);
+                if (!(respObject instanceof JSONObject))
+                    throw new NxtException("Server response is not a JSON object");
+                response = new PeerResponse((Map<String, Object>)respObject);
                 Long errorCode = (Long)response.get("errorCode");
                 if (errorCode != null) {
                     String errorDesc = (String)response.get("errorDescription");
                     String errorText = String.format("Error %d returned for %s request: %s",
-                                           errorCode, requestType, errorDesc);
+                                                     errorCode, requestType, errorDesc);
                     log.error(errorText);
                     throw new NxtException(errorText, errorCode.intValue());
                 }
             }
             if (log.isDebugEnabled())
                 log.debug(String.format("Request complete: Content-Encoding %s\n%s",
-                                        contentEncoding, Utils.formatJSON(response)));
+                                        contentEncoding, Utils.formatJSON(response.getObjectMap())));
         } catch (MalformedURLException exc) {
             throw new NxtException("Malformed Nxt API URL", exc);
         } catch (ParseException exc) {
-            String errorText = String.format("JSON parse exception for %s request: Position %d, Code %d",
-                                             requestType, exc.getPosition(), exc.getErrorType());
+            String errorText = String.format("JSON parse exception for %s request: Position %d: %s",
+                                             requestType, exc.getErrorOffset(), exc.getMessage());
             log.error(errorText);
             throw new NxtException(errorText);
         } catch (IOException exc) {
@@ -1515,35 +1511,6 @@ public class Nxt {
         @Override
         public void checkServerTrusted(X509Certificate[] certs, String authType)
                                             throws CertificateException {
-        }
-    }
-
-    /**
-     * JSON container factory
-     *
-     * We will create PeerResponse for JSONObject and List<Object> for JSONArray
-     */
-    @SuppressWarnings("unchecked")
-    private static class ResponseFactory implements ContainerFactory {
-
-        /**
-         * Create an object container
-         *
-         * @return                          PeerResponse
-         */
-        @Override
-        public Map<String, Object> createObjectContainer() {
-            return new PeerResponse();
-        }
-
-        /**
-         * Create an array container
-         *
-         * @return                          List<Object>
-         */
-        @Override
-        public List<Object> creatArrayContainer() {
-            return new JSONArray();
         }
     }
 }

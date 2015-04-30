@@ -17,6 +17,7 @@ package org.ScripterRon.NxtCore;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * StackTraces is created from the response for the GetStackTraces API
@@ -38,15 +39,15 @@ public class StackTraces {
         //
         // Get the thread information
         //
-        List<PeerResponse> threads = response.getObjectList("threads");
+        List<Map<String, Object>> threads = response.getObjectList("threads");
         threadInfo = new ArrayList<>(Math.max(threads.size(), 1));
-        threads.stream().forEach((thread) -> threadInfo.add(new ThreadInfo(thread)));
+        threads.stream().forEach((thread) -> threadInfo.add(new ThreadInfo(new PeerResponse(thread))));
         //
         // Get the lock information
         //
-        List<PeerResponse> locks = response.getObjectList("locks");
+        List<Map<String, Object>> locks = response.getObjectList("locks");
         blockingLocks = new ArrayList<>(Math.max(locks.size(), 1));
-        locks.stream().forEach((lock) -> blockingLocks.add(new LockInfo(lock)));
+        locks.stream().forEach((lock) -> blockingLocks.add(new LockInfo(new PeerResponse(lock))));
     }
 
     /**

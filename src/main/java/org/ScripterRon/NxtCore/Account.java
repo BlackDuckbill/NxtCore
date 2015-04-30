@@ -18,6 +18,7 @@ package org.ScripterRon.NxtCore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Account is the response for the 'getAccount' API request
@@ -102,12 +103,13 @@ public class Account {
         this.nextLeasingFrom = response.getInt("nextLeasingHeightFrom");
         this.nextLeasingTo = response.getInt("nextLeasingHeightTo");
         this.lessors = response.getIdList("lessors");
-        List<PeerResponse> assetList = response.getObjectList("assetBalances");
+        List<Map<String, Object>> assetList = response.getObjectList("assetBalances");
         if (assetList.isEmpty()) {
             this.assetBalances = Collections.emptyList();
         } else {
             this.assetBalances = new ArrayList<>(assetList.size());
-            for (PeerResponse asset : assetList) {
+            for (Map<String, Object> entry : assetList) {
+                PeerResponse asset = new PeerResponse(entry);
                 long assetId = asset.getId("asset");
                 long assetBalance = asset.getLongString("balanceQNT");
                 assetBalances.add(new AssetBalance(accountId, assetId, assetBalance));
@@ -118,7 +120,8 @@ public class Account {
             this.unconfirmedAssetBalances = Collections.emptyList();
         } else {
             this.unconfirmedAssetBalances = new ArrayList<>(assetList.size());
-            for (PeerResponse asset : assetList) {
+            for (Map<String, Object> entry : assetList) {
+                PeerResponse asset = new PeerResponse(entry);
                 long assetId = asset.getId("asset");
                 long assetBalance = asset.getLongString("unconfirmedBalanceQNT");
                 unconfirmedAssetBalances.add(new AssetBalance(accountId, assetId, assetBalance));

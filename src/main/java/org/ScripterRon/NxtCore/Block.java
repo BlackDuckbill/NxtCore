@@ -18,6 +18,7 @@ package org.ScripterRon.NxtCore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Block is the response for the 'getBlock' API request
@@ -115,16 +116,16 @@ public class Block {
         // or a list of transactions, depending on the value of the 'includeTransactions'
         // parameter for the 'getBlock' request
         //
-        Object param = response.getObject("transactions");
+        Object param = response.get("transactions");
         if (param == null || !(param instanceof List) || ((List)param).isEmpty()) {
             txIdList = Collections.emptyList();
             txList = Collections.emptyList();
-        } else if (((List)param).get(0) instanceof PeerResponse) {
-            List<PeerResponse> txResponses = response.getObjectList("transactions");
+        } else if (((List)param).get(0) instanceof Map) {
+            List<Map<String, Object>> txResponses = response.getObjectList("transactions");
             txIdList = new ArrayList<>(txResponses.size());
             txList = new ArrayList<>(txResponses.size());
-            for (PeerResponse txResponse : txResponses) {
-                Transaction tx = new Transaction(txResponse);
+            for (Map<String, Object> txResponse : txResponses) {
+                Transaction tx = new Transaction(new PeerResponse(txResponse));
                 txList.add(tx);
                 txIdList.add(tx.getTransactionId());
             }

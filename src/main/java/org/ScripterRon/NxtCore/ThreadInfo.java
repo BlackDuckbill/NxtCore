@@ -17,6 +17,7 @@ package org.ScripterRon.NxtCore;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * ThreadInfo contains information for a server thread
@@ -64,9 +65,9 @@ public class ThreadInfo {
         //
         // Get the list of monitor locks
         //
-        List<PeerResponse> monitors = response.getObjectList("locks");
+        List<Map<String, Object>> monitors = response.getObjectList("locks");
         monitorLocks = new ArrayList<>(Math.max(monitors.size(), 1));
-        monitors.stream().forEach((monitor) -> monitorLocks.add(new MonitorInfo(monitor)));
+        monitors.stream().forEach((monitor) -> monitorLocks.add(new MonitorInfo(new PeerResponse(monitor))));
         //
         // Get the blocking lock for this thread
         //

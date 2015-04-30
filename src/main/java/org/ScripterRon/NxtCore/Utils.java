@@ -24,8 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.json.simple.JSONAware;
-
 /**
  * Utility functions
  */
@@ -259,14 +257,26 @@ public class Utils {
     }
 
     /**
-     * Create a formatted string for a JSON response
+     * Create a formatted string for a JSON array
      *
-     * @param       response                The JSON response
+     * @param       array                   JSON array
      * @return                              Formatted string
      */
-    public static String formatJSON(JSONAware response) {
-        StringBuilder builder = new StringBuilder(256);
-        formatJSON(builder, "", response);
+    public static String formatJSON(List<Object> array) {
+        StringBuilder builder = new StringBuilder(512);
+        formatJSON(builder, "", array);
+        return new String(builder);
+    }
+
+    /**
+     * Create a formatted string for a JSON object
+     *
+     * @param       map                     JSON object
+     * @return                              Formatted string
+     */
+    public static String formatJSON(Map<String, Object> map) {
+        StringBuilder builder = new StringBuilder(512);
+        formatJSON(builder, "", map);
         return new String(builder);
     }
 
@@ -278,10 +288,10 @@ public class Utils {
      * @param       object                  The JSON object
      */
     @SuppressWarnings("unchecked")
-    private static void formatJSON(StringBuilder builder, String indent, JSONAware object) {
+    private static void formatJSON(StringBuilder builder, String indent, Object object) {
         String itemIndent = indent+"  ";
         if (object instanceof List) {
-            List<Object> array = (List)object;
+            List<Object> array = (List<Object>)object;
             builder.append(indent).append("[\n");
             array.stream().forEach((value) -> {
                 if (value == null) {
@@ -294,9 +304,8 @@ public class Utils {
                     builder.append(itemIndent).append(((Double)value).toString()).append('\n');
                 } else if (value instanceof String) {
                     builder.append(itemIndent).append('"').append((String)value).append("\"\n");
-                } else if (value instanceof JSONAware) {
-                    builder.append('\n');
-                    formatJSON(builder, itemIndent+"  ", (JSONAware)value);
+                } else if ((value instanceof List) || (value instanceof Map)) {
+                    formatJSON(builder, itemIndent, (JSONAware)value);
                 } else {
                     builder.append(itemIndent).append("Unknown\n");
                 }
@@ -304,7 +313,7 @@ public class Utils {
             builder.append(indent).append("]\n");
         } else {
             builder.append(indent).append("{\n");
-            Map<String, Object> map = (Map)object;
+            Map<String, Object> map = (Map<String, Object>)object;
             Iterator<Map.Entry<String, Object>> it = map.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry entry = it.next();

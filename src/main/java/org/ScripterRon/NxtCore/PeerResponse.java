@@ -15,17 +15,17 @@
  */
 package org.ScripterRon.NxtCore;
 
-import org.json.simple.JSONObject;
-
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * PeerResponse is used for the JSON-encoded responses returned by the Nxt node
  */
 @SuppressWarnings("unchecked")
-public class PeerResponse extends JSONObject {
+public class PeerResponse {
 
     /** Empty string list */
     private static final List<String> emptyStringList = Collections.emptyList();
@@ -34,24 +34,44 @@ public class PeerResponse extends JSONObject {
     private static final List<Long> emptyLongList = Collections.emptyList();
 
     /** Empty object list */
-    private static final List<PeerResponse> emptyObjectList = Collections.emptyList();
+    private static final List<Map<String, Object>> emptyObjectList = Collections.emptyList();
+
+    /** JSON object map */
+    private final Map<String, Object> objectMap;
 
     /**
-     * Create the response object
+     * Create the peer response with an empty map
      */
     public PeerResponse() {
-        super();
+        objectMap = new HashMap<>();
     }
 
     /**
-     * Return a JSON object
+     * Create the peer response for the supplied JSON object map
+     *
+     * @param       map                     JSON object map
+     */
+    public PeerResponse(Map<String, Object> map) {
+        objectMap = map;
+    }
+
+    /**
+     * Return the JSON object map
+     *
+     * @return                              Object map
+     */
+    public Map<String, Object> getObjectMap() {
+        return objectMap;
+    }
+
+    /**
+     * Return an object map entry
      *
      * @param       key                     JSON key
-     * @return                              Object or null if key not found
+     * @return                              Map value or null if the key is not found
      */
-    public Object getObject(String key) {
-        Object value = get(key);
-        return (value instanceof List ? (List<Object>)value : (PeerResponse)value);
+    public Object get(String key) {
+        return objectMap.get(key);
     }
 
     /**
@@ -205,9 +225,9 @@ public class PeerResponse extends JSONObject {
      * @param       key                     JSON key
      * @return                              Object list (empty list if key not found)
      */
-    public List<PeerResponse> getObjectList(String key) {
+    public List<Map<String, Object>> getObjectList(String key) {
         Object value = get(key);
         return (value!=null && (value instanceof List) && !((List)value).isEmpty() &&
-                (((List)value).get(0) instanceof PeerResponse) ? (List<PeerResponse>)value : emptyObjectList);
+                (((List)value).get(0) instanceof Map) ? (List<Map<String, Object>>)value : emptyObjectList);
     }
 }
