@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ronald Hoffman.
+ * Copyright 2014-2015 Ronald Hoffman.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.ScripterRon.NxtCore;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Map;
 
 /**
  * Transaction represents a transaction in a block
@@ -158,9 +159,9 @@ public class Transaction {
             ecBlockId = 0;
             ecBlockHeight = 0;
         }
-        PeerResponse attachmentResponse = (PeerResponse)response.get("attachment");
-        if (attachmentResponse != null)
-            attachment = txType.loadAttachment(attachmentResponse);
+        Map<String, Object> attachmentResponse = response.getObject("attachment");
+        if (!attachmentResponse.isEmpty())
+            attachment = txType.loadAttachment(new PeerResponse(attachmentResponse));
         else
             attachment = null;
     }

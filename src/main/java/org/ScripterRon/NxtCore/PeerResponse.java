@@ -36,6 +36,9 @@ public class PeerResponse {
     /** Empty object list */
     private static final List<Map<String, Object>> emptyObjectList = Collections.emptyList();
 
+    /** Empty object */
+    private static final Map<String, Object> emptyObject = Collections.emptyMap();
+
     /** JSON object map */
     private final Map<String, Object> objectMap;
 
@@ -217,6 +220,17 @@ public class PeerResponse {
         Object value = get(key);
         return (value!=null && (value instanceof List) && !((List)value).isEmpty() &&
                 (((List)value).get(0) instanceof String) ? (List<String>)value : emptyStringList);
+    }
+
+    /**
+     * Return a JSON object
+     *
+     * @param       key                     JSON key
+     * @return                              JSON object (empty map if key not found)
+     */
+    public Map<String, Object> getObject(String key) {
+        Object value = get(key);
+        return (value!=null && (value instanceof Map) ? (Map<String, Object>)value : emptyObject);
     }
 
     /**
