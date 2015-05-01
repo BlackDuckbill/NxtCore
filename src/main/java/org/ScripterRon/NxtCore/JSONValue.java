@@ -17,13 +17,76 @@ package org.ScripterRon.NxtCore;
 
 import java.io.CharConversionException;
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Routines for processing JSON values
+ * Routines for encoding JSON strings
  */
 public class JSONValue {
+
+    /**
+     * Create a formatted string from a list
+     *
+     * @param   list                            List
+     * @param   sb                              String builder
+     * @throws  CharConversionException         Invalid Unicode character in string value
+     * @throws  UnsupportedEncodingException    Unsupported data type
+     */
+    public static void encodeArray(List<? extends Object> list, StringBuilder sb)
+                                                throws CharConversionException, UnsupportedEncodingException {
+        if (list == null) {
+            sb.append("null");
+            return;
+        }
+        boolean firstElement = true;
+        sb.append('[');
+        for (Object obj : list) {
+            if (firstElement)
+                firstElement = false;
+            else
+                sb.append(',');
+            encodeValue(obj, sb);
+        }
+        sb.append(']');
+    }
+
+    /**
+     * Create a formatted string from a map
+     *
+     * @param   map                             Map
+     * @param   sb                              String builder
+     * @throws  CharConversionException         Invalid Unicode character in string value
+     * @throws  UnsupportedEncodingException    Unsupported data type
+     */
+    @SuppressWarnings("unchecked")
+    public static void encodeObject(Map<? extends Object, ? extends Object> map, StringBuilder sb)
+                                                throws CharConversionException, UnsupportedEncodingException {
+        if (map == null) {
+            sb.append("null");
+            return;
+        }
+        Set<Map.Entry<Object, Object>> entries = (Set)map.entrySet();
+        Iterator<Map.Entry<Object, Object>> it = entries.iterator();
+        boolean firstElement = true;
+        sb.append('{');
+        while (it.hasNext()) {
+            Map.Entry<Object, Object> entry = it.next();
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+            if (!(key instanceof String))
+                throw new UnsupportedEncodingException("JSON map key is not a string");
+            if (firstElement)
+                firstElement = false;
+            else
+                sb.append(',');
+            sb.append('\"').append((String)key).append("\":");
+            encodeValue(value, sb);
+        }
+        sb.append('}');
+    }
 
     /**
      * Encode a JSON value
@@ -35,7 +98,7 @@ public class JSONValue {
      */
     @SuppressWarnings("unchecked")
     public static void encodeValue(Object value, StringBuilder sb)
-                                    throws CharConversionException, UnsupportedEncodingException {
+                                                throws CharConversionException, UnsupportedEncodingException {
         if (value == null) {
             sb.append("null");
         } else if (value instanceof String) {
@@ -59,9 +122,9 @@ public class JSONValue {
         } else if (value instanceof JSONAware) {
             ((JSONAware)value).toJSONString(sb);
         } else if (value instanceof Map) {
-            JSONObject.toJSONString((Map<String, Object>)value, sb);
+            encodeObject((Map<Object, Object>)value, sb);
         } else if (value instanceof List) {
-            JSONArray.toJSONString((List<Object>)value, sb);
+            encodeArray((List<Object>)value, sb);
         } else {
             throw new UnsupportedEncodingException("Unsupported JSON data type");
         }

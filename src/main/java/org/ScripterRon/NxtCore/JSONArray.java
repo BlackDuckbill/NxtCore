@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * JSON array container (extends ArrayList)
@@ -55,7 +54,7 @@ public class JSONArray<E> extends ArrayList<E> implements JSONAware {
     @Override
     public String toJSONString() throws CharConversionException, UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder(512);
-        toJSONString(this, sb);
+        JSONValue.encodeArray(this, sb);
         return sb.toString();
     }
 
@@ -68,7 +67,7 @@ public class JSONArray<E> extends ArrayList<E> implements JSONAware {
      */
     @Override
     public void toJSONString(StringBuilder sb) throws CharConversionException, UnsupportedEncodingException {
-        toJSONString(this, sb);
+        JSONValue.encodeArray(this, sb);
     }
 
     /**
@@ -80,34 +79,8 @@ public class JSONArray<E> extends ArrayList<E> implements JSONAware {
      * @throws  UnsupportedEncodingException    Unsupported data type
      */
     @Override
-    public void writeJSONString(Writer writer)
-                                throws CharConversionException, UnsupportedEncodingException, IOException {
+    public void writeJSONString(Writer writer) throws CharConversionException, UnsupportedEncodingException,
+                                                      IOException {
         writer.write(toJSONString());
-    }
-
-    /**
-     * Create a formatted string from a collection
-     *
-     * @param   collection                      Collection
-     * @param   sb                              String builder
-     * @throws  CharConversionException         Invalid Unicode character in string value
-     * @throws  UnsupportedEncodingException    Unsupported data type
-     */
-    public static void toJSONString(List<? extends Object> collection, StringBuilder sb)
-                                throws CharConversionException, UnsupportedEncodingException {
-        if (collection == null) {
-            sb.append("null");
-            return;
-        }
-        boolean firstElement = true;
-        sb.append('[');
-        for (Object obj : collection) {
-            if (firstElement)
-                firstElement = false;
-            else
-                sb.append(',');
-            JSONValue.encodeValue(obj, sb);
-        }
-        sb.append(']');
     }
 }

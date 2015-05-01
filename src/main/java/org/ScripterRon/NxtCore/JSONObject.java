@@ -20,9 +20,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * JSON object container (extends HashMap)
@@ -58,7 +55,7 @@ public class JSONObject<K, V> extends HashMap<K, V> implements JSONAware {
     @Override
     public String toJSONString() throws CharConversionException, UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder(512);
-        toJSONString(this, sb);
+        JSONValue.encodeObject(this, sb);
         return sb.toString();
     }
 
@@ -71,7 +68,7 @@ public class JSONObject<K, V> extends HashMap<K, V> implements JSONAware {
      */
     @Override
     public void toJSONString(StringBuilder sb) throws CharConversionException, UnsupportedEncodingException {
-        toJSONString(this, sb);
+        JSONValue.encodeObject(this, sb);
     }
 
     /**
@@ -83,46 +80,8 @@ public class JSONObject<K, V> extends HashMap<K, V> implements JSONAware {
      * @throws  UnsupportedEncodingException    Unsupported data type
      */
     @Override
-    public void writeJSONString(Writer writer)
-                                throws CharConversionException, UnsupportedEncodingException, IOException {
+    public void writeJSONString(Writer writer) throws CharConversionException, UnsupportedEncodingException,
+                                                      IOException {
         writer.write(toJSONString());
-    }
-
-    /**
-     * Create a formatted string from a map
-     *
-     * @param   map                             Map
-     * @param   sb                              String builder
-     * @throws  CharConversionException         Invalid Unicode character in string value
-     * @throws  UnsupportedEncodingException    Unsupported data type
-     */
-    @SuppressWarnings("unchecked")
-    public static void toJSONString(Map<? extends Object, ? extends Object> map, StringBuilder sb)
-                                    throws CharConversionException, UnsupportedEncodingException {
-        if (map == null) {
-            sb.append("null");
-            return;
-        }
-        Set<Map.Entry<Object, Object>> entries;
-        Iterator<Map.Entry<Object, Object>> it;
-        Map.Entry<Object, Object> entry;
-        entries = (Set)map.entrySet();
-        it = entries.iterator();
-        boolean firstElement = true;
-        sb.append('{');
-        while (it.hasNext()) {
-            entry = it.next();
-            Object key = entry.getKey();
-            Object value = entry.getValue();
-            if (!(key instanceof String))
-                throw new UnsupportedEncodingException("JSON map key is not a string");
-            if (firstElement)
-                firstElement = false;
-            else
-                sb.append(',');
-            sb.append('\"').append((String)key).append("\":");
-            JSONValue.encodeValue(value, sb);
-        }
-        sb.append('}');
     }
 }
