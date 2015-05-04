@@ -812,6 +812,26 @@ public class Nxt {
     }
 
     /**
+     * Get the current inbound peers
+     *
+     * @return                              Peer list
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<Peer> getInboundPeers() throws NxtException {
+        List<Peer> peers = new LinkedList<>();
+        try {
+            PeerResponse response = issueRequest("getInboundPeers", "includePeerInfo=true", nodeReadTimeout);
+            List<Map<String, Object>> peerResponses = response.getObjectList("peers");
+            for (Map<String, Object> peerResponse : peerResponses)
+                peers.add(new Peer(new PeerResponse(peerResponse)));
+        } catch (NumberFormatException exc) {
+            log.error("Invalid peer data returned for 'getInboundPeers'", exc);
+            throw new NxtException("Invalid peer data returned for 'getInboundPeers'", exc);
+        }
+        return peers;
+    }
+
+    /**
      * Get recent server log messages
      *
      * @param       count                   Number of log messages requested
