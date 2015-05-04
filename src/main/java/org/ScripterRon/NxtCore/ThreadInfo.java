@@ -71,9 +71,9 @@ public class ThreadInfo {
         //
         // Get the blocking lock for this thread
         //
-        PeerResponse blocking = (PeerResponse)response.get("blocked");
-        if (blocking != null) {
-            blockingLock = new LockInfo(blocking);
+        Map<String, Object> blocking = response.getObject("blocked");
+        if (!blocking.isEmpty()) {
+            blockingLock = new LockInfo(new PeerResponse(blocking));
         } else {
             blockingLock = null;
         }
