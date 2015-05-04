@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ronald Hoffman.
+ * Copyright 2014-2015 Ronald Hoffman.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ public class ChainState {
     /** Application version */
     private final String version;
 
+    /** Mainnet or testnet */
+    private final boolean isTestnet;
+
     /** Last block identifier */
     private final long lastBlockId;
 
@@ -43,11 +46,23 @@ public class ChainState {
     /** Number of blocks */
     private final int blockCount;
 
-    /** Node time */
+    /** Node time expressed as seconds since the genesis block time */
     private final int time;
 
     /** Cumulative difficulty */
     private final BigInteger cumulativeDifficulty;
+
+    /** Minimum rollback height */
+    private final int minRollbackHeight;
+
+    /** Maximum rollback */
+    private final int maxRollback;
+
+    /** Include expired prunable data */
+    private final boolean includeExpiredPrunable;
+
+    /** Max prunable data lifetime */
+    private final int maxPrunableLifetime;
 
     /**
      * Create the chain state from the response for the 'getBlockchainStatus' request
@@ -59,6 +74,7 @@ public class ChainState {
     public ChainState(PeerResponse response) throws IdentifierException, NumberFormatException {
         this.application = response.getString("application");
         this.version = response.getString("version");
+        this.isTestnet = response.getBoolean("isTestnet");
         this.lastBlockId = response.getId("lastBlock");
         this.lastFeeder = response.getString("lastBlockchainFeeder");
         this.lastFeederHeight = response.getInt("lastBlockchainFeederHeight");
@@ -66,6 +82,10 @@ public class ChainState {
         this.blockCount = response.getInt("numberOfBlocks");
         this.time = response.getInt("time");
         this.cumulativeDifficulty = new BigInteger(response.getString("cumulativeDifficulty"));
+        this.minRollbackHeight = response.getInt("currentMinRollbackHeight");
+        this.maxRollback = response.getInt("maxRollback");
+        this.includeExpiredPrunable = response.getBoolean("includeExpiredPrunable");
+        this.maxPrunableLifetime = response.getInt("maxPrunableLifetime");
     }
 
     /**
@@ -78,7 +98,7 @@ public class ChainState {
     }
 
     /**
-     * Returns the application version
+     * Return the application version
      *
      * @return                      Version
      */
@@ -87,7 +107,16 @@ public class ChainState {
     }
 
     /**
-     * Returns the number of blocks in the block chain
+     * Check if running on the testnet
+     *
+     * @return                      TRUE if running on the testnet
+     */
+    public boolean isTestnet() {
+        return isTestnet;
+    }
+
+    /**
+     * Return the number of blocks in the block chain
      *
      * @return                      Number of blocks
      */
@@ -96,12 +125,30 @@ public class ChainState {
     }
 
     /**
-     * Returns the identifier of the last block
+     * Return the identifier of the last block
      *
      * @return                      Last block identifier
      */
     public long getLastBlockId() {
         return lastBlockId;
+    }
+
+    /**
+     * Return the minimum rollback height
+     *
+     * @return                      Minimum rollback height
+     */
+    public int getMinRollbackHeight() {
+        return minRollbackHeight;
+    }
+
+    /**
+     * Return the maximum rollback
+     *
+     * @return                      Maximum rollback
+     */
+    public int getMaxRollback() {
+        return maxRollback;
     }
 
     /**
@@ -147,5 +194,23 @@ public class ChainState {
      */
     public int lastFeederHeight() {
         return lastFeederHeight;
+    }
+
+    /**
+     * Check if expired prunable data is included
+     *
+     * @return                      TRUE if expired prunable data is included
+     */
+    public boolean includeExpiredPrunable() {
+        return includeExpiredPrunable;
+    }
+
+    /**
+     * Return maximum prunable data lifetime
+     *
+     * @return                      Maximum prunable data lifetime
+     */
+    public int getMaxPrunableLifetime() {
+        return maxPrunableLifetime;
     }
 }
