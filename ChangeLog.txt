@@ -1,6 +1,12 @@
 NxtCore Change Log
 ==================
 
+Version 2.0.0
+  - New JSON support
+  - New fields for Nxt.getBlockchainStatus()
+  - Nxt.getInboundPeers() added
+
+
 Version 1.6.0
   - New transaction types for NRS 1.5
   - Support HTTP response compression
