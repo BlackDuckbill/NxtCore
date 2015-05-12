@@ -66,6 +66,12 @@ public class Peer {
     /** Weight */
     private final long weight;
 
+    /** Inbound WebSocket */
+    private boolean inboundWebSocket;
+
+    /** Outbound WebSocket */
+    private boolean outboundWebSocket;
+
     /**
      * Create a peer
      *
@@ -85,6 +91,8 @@ public class Peer {
         uploadedVolume = response.getLong("uploadedVolume");
         version = response.getString("version");
         weight = response.getLong("weight");
+        inboundWebSocket = response.getBoolean("inboundWebSocket");
+        outboundWebSocket = response.getBoolean("outboundWebSocket");
         switch (response.getInt("state")) {
             case 1:
                 state = State.CONNECTED;
@@ -186,6 +194,42 @@ public class Peer {
      */
     public void setState(State state) {
         this.state = state;
+    }
+
+    /**
+     * Check if using inbound WebSocket
+     *
+     * @return                              TRUE if inbound WebSocket
+     */
+    public boolean isInboundWebSocket() {
+        return inboundWebSocket;
+    }
+
+    /**
+     * Set inbound WebSocket status
+     *
+     * @param   inboundWebSocket            TRUE if inbound WebSocket
+     */
+    public void setInboundWebSocket(boolean inboundWebSocket) {
+        this.inboundWebSocket = inboundWebSocket;
+    }
+
+    /**
+     * Check if using outbound WebSocket
+     *
+     * @return                              TRUE if outbound WebSocket
+     */
+    public boolean isOutboundWebSocket() {
+        return outboundWebSocket;
+    }
+
+    /**
+     * Set outbound WebSocket status
+     *
+     * @param   outboundWebSocket           TRUE if outbound WebSocket
+     */
+    public void setOutboundWebSocket(boolean outboundWebSocket) {
+        this.outboundWebSocket = outboundWebSocket;
     }
 
     /**
