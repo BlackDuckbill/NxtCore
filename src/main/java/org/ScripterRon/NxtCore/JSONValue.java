@@ -21,11 +21,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Routines for encoding JSON strings
  */
 public class JSONValue {
+
+    /** String escape pattern */
+    private static final Pattern pattern = Pattern.compile(
+            "[\"\\\\\\u0008\\f\\n\\r\\t/\\u0000-\\u001f\\u007f-\\u009f\\u2000-\\u20ff\\ud800-\\udbff]");
 
     /**
      * Create a formatted string from a list
@@ -138,12 +144,23 @@ public class JSONValue {
      * @throws  CharConversionException     Invalid Unicode character
      */
     private static void escapeString(String string, StringBuilder sb)
-                                        throws CharConversionException {
-        for (int i=0; i<string.length(); i++) {
+                                            throws CharConversionException {
+        if (string.length() == 0)
+            return;
+        //
+        // Find the next special character in the string
+        //
+        int start = 0;
+        Matcher matcher = pattern.matcher(string);
+        while (matcher.find(start)) {
+            int pos = matcher.start();
+            if (pos > start)
+                sb.append(string.substring(start, pos));
+            start = pos + 1;
             //
             // Check for a valid Unicode codepoint
             //
-            int ch = string.codePointAt(i);
+            int ch = string.codePointAt(pos);
             if (!Character.isValidCodePoint(ch))
                 throw new CharConversionException("Invalid Unicode character in JSON string value");
             //
@@ -151,13 +168,13 @@ public class JSONValue {
             //
             if (Character.isSupplementaryCodePoint(ch)) {
                 sb.appendCodePoint(ch);
-                i++;
+                start++;
                 continue;
             }
             //
             // Escape control characters
             //
-            char c = string.charAt(i);
+            char c = string.charAt(pos);
             switch (c) {
                 case '"':
                     sb.append("\\\"");
@@ -195,5 +212,12 @@ public class JSONValue {
                     }
             }
         }
+        //
+        // Append the remainder of the string
+        //
+        if (start == 0)
+            sb.append(string);
+        else if (start < string.length())
+            sb.append(string.substring(start));
     }
 }
