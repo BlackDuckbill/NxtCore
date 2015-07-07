@@ -15,6 +15,8 @@
  */
 package org.ScripterRon.NxtCore;
 
+import org.ScripterRon.JSON.JSONAware;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;

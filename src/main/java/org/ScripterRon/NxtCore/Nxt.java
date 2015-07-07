@@ -15,6 +15,9 @@
  */
 package org.ScripterRon.NxtCore;
 
+import org.ScripterRon.JSON.JSONObject;
+import org.ScripterRon.JSON.JSONParser;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

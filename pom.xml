@@ -10,6 +10,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <slf4j.version>1.7.12</slf4j.version>
+        <json.version>1.0.0</json.version>
     </properties>
     <name>Java Nxt Core Library</name>
     <url>https://github.com/ScripterRon/NxtCore</url>
@@ -78,15 +79,19 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>            
+            </plugin>
         </plugins>
     </build>
     <dependencies>
         <dependency>
+            <groupId>org.ScripterRon</groupId>
+            <artifactId>JSON</artifactId>
+            <version>${json.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
