@@ -51,11 +51,17 @@ public class Transaction {
     /** Transaction identifier */
     private final long txId;
 
+    /** Transaction block index */
+    private final int txIndex;
+
     /** Transaction hash */
     private final byte[] txHash;
 
     /** Transaction type */
     private final TransactionType txType;
+
+    /** Transaction is phased */
+    private final boolean isPhased;
 
     /** Sender identifier */
     private final long senderId;
@@ -142,6 +148,8 @@ public class Transaction {
         if (signature == null || signature.length != 64)
             throw new NxtException("Transaction signature is not valid");
         signatureHash = response.getHexString("signatureHash");
+        txIndex = response.getInt("transactionIndex");
+        isPhased = response.getBoolean("phased");
         blockId = response.getId("block");
         if (blockId != 0) {
             blockTimestamp = response.getInt("blockTimestamp");
@@ -200,6 +208,8 @@ public class Transaction {
         this.attachment = attachment;
         this.ecBlockId = ecBlock.getBlockId();
         this.ecBlockHeight = ecBlock.getHeight();
+        this.isPhased = false;
+        this.txIndex = -1;
         this.blockId = 0;
         this.blockTimestamp = 0;
         this.height = -1;
@@ -437,6 +447,24 @@ public class Transaction {
      */
     public Attachment getAttachment() {
         return attachment;
+    }
+
+    /**
+     * Check if this is a phased transaction
+     *
+     * @return                              TRUE if this is a phased transaction
+     */
+    public boolean isPhased() {
+        return isPhased;
+    }
+
+    /**
+     * Return the transaction block index
+     *
+     * @return                              Position within block transactions or -1 if not in a block
+     */
+    public int getTransactionIndex() {
+        return txIndex;
     }
 
     /**

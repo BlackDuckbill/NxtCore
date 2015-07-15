@@ -110,6 +110,13 @@ public abstract class TransactionType {
     /** Delete currency */
     public static final byte SUBTYPE_MONETARY_SYSTEM_CURRENCY_DELETION = 8;
 
+    /** Data transaction */
+    public static final byte TYPE_DATA = 6;
+    /** Upload tagged data */
+    public static final byte SUBTYPE_DATA_TAGGED_DATA_UPLOAD = 0;
+    /** Extend tagged data */
+    public static final byte SUBTYPE_DATA_TAGGED_DATA_EXTEND = 1;
+
     /**
      * Return the TransactionType for the specified type and subtype values
      *
@@ -251,6 +258,15 @@ public abstract class TransactionType {
                         txType = MonetarySystem.CURRENCY_DELETION;
                         break;
                 }
+            case TYPE_DATA:
+                switch (subtype) {
+                    case SUBTYPE_DATA_TAGGED_DATA_UPLOAD:
+                        txType = Data.TAGGED_DATA_UPLOAD;
+                        break;
+                    case SUBTYPE_DATA_TAGGED_DATA_EXTEND:
+                        txType = Data.TAGGED_DATA_EXTEND;
+                        break;
+                }
         }
         return txType;
     }
@@ -314,6 +330,7 @@ public abstract class TransactionType {
      * Payment transactions
      */
     public static abstract class Payment extends TransactionType {
+        
         /**
          * Return the transaction type
          *
@@ -328,6 +345,7 @@ public abstract class TransactionType {
          * Ordinary payment
          */
         public static final TransactionType ORDINARY = new Payment() {
+
             /**
              * Return the transaction subtype
              *
@@ -354,6 +372,7 @@ public abstract class TransactionType {
      * Messaging transactions
      */
     public static abstract class Messaging extends TransactionType {
+
         /**
          * Return the transaction type
          *
@@ -368,6 +387,7 @@ public abstract class TransactionType {
          * Arbitrary message
          */
         public static final TransactionType ARBITRARY_MESSAGE = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -407,6 +427,7 @@ public abstract class TransactionType {
          * Alias assignment
          */
         public static final TransactionType ALIAS_ASSIGNMENT = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -445,6 +466,7 @@ public abstract class TransactionType {
          * Alias buy
          */
         public static final TransactionType ALIAS_BUY = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -484,6 +506,7 @@ public abstract class TransactionType {
          * Alias sell
          */
         public static final TransactionType ALIAS_SELL = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -523,6 +546,7 @@ public abstract class TransactionType {
          * Delete alias
          */
         public static final TransactionType ALIAS_DELETE = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -548,6 +572,7 @@ public abstract class TransactionType {
          * Poll creation
          */
         public static final TransactionType POLL_CREATION = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -573,6 +598,7 @@ public abstract class TransactionType {
          * Vote casting
          */
         public static final TransactionType VOTE_CASTING = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -598,6 +624,7 @@ public abstract class TransactionType {
          * Phasing vote casting
          */
         public static final TransactionType PHASING_VOTE_CASTING = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -623,6 +650,7 @@ public abstract class TransactionType {
          * Hub announcement
          */
         public static final TransactionType HUB_ANNOUNCEMENT = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -648,6 +676,7 @@ public abstract class TransactionType {
          * Account information
          */
         public static final TransactionType ACCOUNT_INFO = new Messaging() {
+
             /**
              * Return the transaction subtype
              *
@@ -688,6 +717,7 @@ public abstract class TransactionType {
      * Colored coin transactions
      */
     public static abstract class ColoredCoins extends TransactionType {
+
         /**
          * Return the transaction type
          *
@@ -702,6 +732,7 @@ public abstract class TransactionType {
          * Asset issuance
          */
         public static final TransactionType ASSET_ISSUANCE = new ColoredCoins() {
+
             /**
              * Return the transaction subtype
              *
@@ -727,6 +758,7 @@ public abstract class TransactionType {
          * Asset transfer
          */
         public static final TransactionType ASSET_TRANSFER = new ColoredCoins() {
+
             /**
              * Return the transaction subtype
              *
@@ -752,6 +784,7 @@ public abstract class TransactionType {
          * Ask order placement
          */
         public static final TransactionType ASK_ORDER_PLACEMENT = new ColoredCoins() {
+
             /**
              * Return the transaction subtype
              *
@@ -777,6 +810,7 @@ public abstract class TransactionType {
          * Bid order placement
          */
         public static final TransactionType BID_ORDER_PLACEMENT = new ColoredCoins() {
+
             /**
              * Return the transaction subtype
              *
@@ -802,6 +836,7 @@ public abstract class TransactionType {
          * Ask order cancellation
          */
         public static final TransactionType ASK_ORDER_CANCELLATION = new ColoredCoins() {
+
             /**
              * Return the transaction subtype
              *
@@ -827,6 +862,7 @@ public abstract class TransactionType {
          * Bid order cancellation
          */
         public static final TransactionType BID_ORDER_CANCELLATION = new ColoredCoins() {
+
             /**
              * Return the transaction subtype
              *
@@ -852,6 +888,7 @@ public abstract class TransactionType {
          * Dividend payment
          */
         public static final TransactionType DIVIDEND_PAYMENT = new ColoredCoins() {
+
             /**
              * Return the transaction subtype
              *
@@ -878,6 +915,7 @@ public abstract class TransactionType {
      * Digital goods transactions
      */
     public static abstract class DigitalGoods extends TransactionType {
+
         /**
          * Return the transaction type
          *
@@ -892,6 +930,7 @@ public abstract class TransactionType {
          * Digital goods listing
          */
         public static final TransactionType LISTING = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -917,6 +956,7 @@ public abstract class TransactionType {
          * Digital goods delisting
          */
         public static final TransactionType DELISTING = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -942,6 +982,7 @@ public abstract class TransactionType {
          * Digital goods price change
          */
         public static final TransactionType PRICE_CHANGE = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -967,6 +1008,7 @@ public abstract class TransactionType {
          * Digital goods quantity change
          */
         public static final TransactionType QUANTITY_CHANGE = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -992,6 +1034,7 @@ public abstract class TransactionType {
          * Digital goods purchase
          */
         public static final TransactionType PURCHASE = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -1017,6 +1060,7 @@ public abstract class TransactionType {
          * Digital goods delivery
          */
         public static final TransactionType DELIVERY = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -1042,6 +1086,7 @@ public abstract class TransactionType {
          * Digital goods feedback
          */
         public static final TransactionType FEEDBACK = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -1067,6 +1112,7 @@ public abstract class TransactionType {
          * Digital goods refund
          */
         public static final TransactionType REFUND = new DigitalGoods() {
+
             /**
              * Return the transaction subtype
              *
@@ -1093,6 +1139,7 @@ public abstract class TransactionType {
      * Account control transactions
      */
     public static abstract class AccountControl extends TransactionType {
+
         /**
          * Return the transaction type
          *
@@ -1107,6 +1154,7 @@ public abstract class TransactionType {
          * Effective balance leasing
          */
         public static final TransactionType EFFECTIVE_BALANCE_LEASING = new AccountControl() {
+
             /**
              * Return the transaction subtype
              *
@@ -1147,6 +1195,7 @@ public abstract class TransactionType {
      * Monetary system transactions
      */
     public static abstract class MonetarySystem extends TransactionType {
+
         /**
          * Return the transaction type
          *
@@ -1161,6 +1210,7 @@ public abstract class TransactionType {
          * Issue currency
          */
         public static final TransactionType CURRENCY_ISSUANCE = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1186,6 +1236,7 @@ public abstract class TransactionType {
          * Increase reserve
          */
         public static final TransactionType RESERVE_INCREASE = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1211,6 +1262,7 @@ public abstract class TransactionType {
          * Claim reserve
          */
         public static final TransactionType RESERVE_CLAIM = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1236,6 +1288,7 @@ public abstract class TransactionType {
          * Transfer currency
          */
         public static final TransactionType CURRENCY_TRANSFER = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1261,6 +1314,7 @@ public abstract class TransactionType {
          * Publish exchange offer
          */
         public static final TransactionType PUBLISH_EXCHANGE_OFFER = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1286,6 +1340,7 @@ public abstract class TransactionType {
          * Buy currency
          */
         public static final TransactionType EXCHANGE_BUY = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1311,6 +1366,7 @@ public abstract class TransactionType {
          * Sell currency
          */
         public static final TransactionType EXCHANGE_SELL = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1336,6 +1392,7 @@ public abstract class TransactionType {
          * Mint currency
          */
         public static final TransactionType CURRENCY_MINTING = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1375,6 +1432,7 @@ public abstract class TransactionType {
          * Delete currency
          */
         public static final TransactionType CURRENCY_DELETION = new MonetarySystem() {
+
             /**
              * Return the transaction subtype
              *
@@ -1393,6 +1451,74 @@ public abstract class TransactionType {
             @Override
             public String getDescription() {
                 return "Delete currency";
+            }
+        };
+    }
+
+    /**
+     * Data transactions
+     */
+    public static abstract class Data extends TransactionType {
+
+        /**
+         * Return the transaction type
+         *
+         * @return                      Transaction type
+         */
+        @Override
+        public byte getType() {
+            return TYPE_DATA;
+        }
+
+        /**
+         * Tagged data upload
+         */
+        public static final TransactionType TAGGED_DATA_UPLOAD = new Data() {
+
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_DATA_TAGGED_DATA_UPLOAD;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Tagged data upload";
+            }
+        };
+
+        /**
+         * Tagged data extend
+         */
+        public static final TransactionType TAGGED_DATA_EXTEND = new Data() {
+
+            /**
+             * Return the transaction subtype
+             *
+             * @return                  Transaction subtype
+             */
+            @Override
+            public byte getSubtype() {
+                return SUBTYPE_DATA_TAGGED_DATA_EXTEND;
+            }
+
+            /**
+             * Return the transaction description
+             *
+             * @return                  Transaction description
+             */
+            @Override
+            public String getDescription() {
+                return "Tagged data extend";
             }
         };
     }
