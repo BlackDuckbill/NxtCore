@@ -404,6 +404,79 @@ public class Nxt {
     }
 
     /**
+     * Get the account ledger entries
+     *
+     * @param       accountIdRs             Reed-Solomon account identifier or null to get entries for all accounts
+     * @param       firstIndex              First index to retrieve (0 if the latest ledger entry)
+     * @param       lastIndex               Last index to retrieve
+     * @param       holdingType             Ledger holding type or null to retrieve entries for any holding
+     * @param       holdingId               Ledger holding identifier or 0 to retrieve entries for any holding
+     *                                      of the specified holding type.  The holding identifier is ignored
+     *                                      if the holding type is not specified.
+     * @return                              Account ledger entries
+     * @throws      IdentifierException     Invalid identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<LedgerEntry> getAccountLedger(String accountIdRs, int firstIndex, int lastIndex,
+                                            LedgerHolding holdingType, long holdingId)
+                                            throws IdentifierException, NxtException {
+        long accountId = (accountIdRs!=null ? Utils.parseAccountRsId(accountIdRs) : 0);
+        return getAccountLedger(accountId, firstIndex, lastIndex, holdingType, holdingId);
+    }
+
+    /**
+     * Get the account ledger entries
+     *
+     * @param       accountId               Account identifier or 0 to get entries for all accounts
+     * @param       firstIndex              First index to retrieve (0 if the latest ledger entry)
+     * @param       lastIndex               Last index to retrieve
+     * @param       holdingType             Ledger holding type or null to retrieve entries for any holding
+     * @param       holdingId               Ledger holding identifier or 0 to retrieve entries for any holding
+     *                                      of the specified holding type.  The holding identifier is ignored
+     *                                      if the holding type is not specified.
+     * @return                              Account ledger entries
+     * @throws      IdentifierException     Invalid identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static List<LedgerEntry> getAccountLedger(long accountId, int firstIndex, int lastIndex,
+                                            LedgerHolding holdingType, long holdingId)
+                                            throws IdentifierException, NxtException {
+        int start = Math.max(firstIndex, 0);
+        int stop = Math.max(lastIndex, start);
+        StringBuilder sb = new StringBuilder(128);
+        sb.append(String.format("firstIndex=%d&lastIndex=%d", start, stop));
+        if (accountId != 0)
+            sb.append("&account=").append(Utils.idToString(accountId));
+        if (holdingType != null) {
+            sb.append("&holdingType=").append(holdingType.getCode());
+            if (holdingId != 0)
+                sb.append("&holdingId=").append(Long.toUnsignedString(holdingId));
+        }
+        PeerResponse response = issueRequest("getAccountLedger", sb.toString(), nodeReadTimeout);
+        List<Map<String, Object>> entryList = response.getObjectList("entries");
+        List<LedgerEntry> entries = new ArrayList<>(Math.max(entryList.size(), 1));
+        for (Map<String, Object> entryObject: entryList) {
+            entries.add(new LedgerEntry(new PeerResponse(entryObject)));
+        }
+        return entries;
+    }
+
+    /**
+     * Get an account ledger entry
+     *
+     * @param       ledgerId                Ledger identifier
+     * @return                              Account ledger entry
+     * @throws      IdentifierException     Invalid identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static LedgerEntry getAccountLedgerEntry(long ledgerId)
+                                            throws IdentifierException, NxtException {
+        PeerResponse response = issueRequest("getAccountLedgerEntry", "ledgerId="+Utils.idToString(ledgerId),
+                                            nodeReadTimeout);
+        return new LedgerEntry(response);
+    }
+
+    /**
      * Get the public key for an account
      *
      * @param       accountIdRs             RS-encoded account identifier

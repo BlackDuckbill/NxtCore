@@ -323,15 +323,6 @@ public class Transaction {
     }
 
     /**
-     * Return the sender account identifier string
-     *
-     * @return                              Sender account identifier string
-     */
-    public String getSenderIdString() {
-        return Utils.idToString(senderId);
-    }
-
-    /**
      * Return the sender Reed-Solomon account identifier
      *
      * @return                              Sender Reed-Solomon account identifier
@@ -357,15 +348,6 @@ public class Transaction {
      */
     public long getRecipientId() {
         return recipientId;
-    }
-
-    /**
-     * Return the recipient account identifier string
-     *
-     * @return                              Recipient account identifier string
-     */
-    public String getRecipientIdString() {
-        return Utils.idToString(recipientId);
     }
 
     /**

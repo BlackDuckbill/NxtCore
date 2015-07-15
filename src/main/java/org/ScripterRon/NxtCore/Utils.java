@@ -31,9 +31,6 @@ import java.util.Map;
  */
 public class Utils {
 
-    /** Maximum long value */
-    private static final BigInteger two64 = new BigInteger("18446744073709551616");
-
     /** Hex conversion alphabet */
     private static final char[] hexChars = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
 
@@ -93,9 +90,7 @@ public class Utils {
      * @return                              Identifier string
      */
     public static String idToString(long objectId) {
-        if (objectId >= 0)
-            return String.valueOf(objectId);
-        return BigInteger.valueOf(objectId).add(two64).toString();
+        return Long.toUnsignedString(objectId);
     }
 
     /**
@@ -103,16 +98,16 @@ public class Utils {
      *
      * @param       number                  Object identifier string
      * @return                              Object identifier
-     * @throws      IdentifierException     Object identifier is not valid
-     * @throws      NumberFormatException   Object identifier is not a valid number
+     * @throws      IdentifierException     Invalid object identifier
      */
-    public static long stringToId(String number) throws IdentifierException, NumberFormatException {
+    public static long stringToId(String number) throws IdentifierException {
         if (number.length() == 0)
             return 0;
-        BigInteger bigInt = new BigInteger(number);
-        if (bigInt.signum() < 0 || bigInt.compareTo(two64) != -1)
-            throw new IdentifierException("Object identifier is not valid");
-        return bigInt.longValue();
+        try {
+            return Long.parseUnsignedLong(number);
+        } catch (NumberFormatException exc) {
+            throw new IdentifierException("Invalid object identifier", exc);
+        }
     }
 
     /**
