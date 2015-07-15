@@ -448,7 +448,7 @@ public class Nxt {
         if (accountId != 0)
             sb.append("&account=").append(Utils.idToString(accountId));
         if (holdingType != null) {
-            sb.append("&holdingType=").append(holdingType.getCode());
+            sb.append("&holdingType=").append(holdingType.name());
             if (holdingId != 0)
                 sb.append("&holdingId=").append(Long.toUnsignedString(holdingId));
         }
