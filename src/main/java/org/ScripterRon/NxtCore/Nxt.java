@@ -413,15 +413,16 @@ public class Nxt {
      * @param       holdingId               Ledger holding identifier or 0 to retrieve entries for any holding
      *                                      of the specified holding type.  The holding identifier is ignored
      *                                      if the holding type is not specified.
+     * @param       includeTransactions     TRUE to include the associated transactions
      * @return                              Account ledger entries
      * @throws      IdentifierException     Invalid identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static List<LedgerEntry> getAccountLedger(String accountIdRs, int firstIndex, int lastIndex,
-                                            LedgerHolding holdingType, long holdingId)
+                                            LedgerHolding holdingType, long holdingId, boolean includeTransactions)
                                             throws IdentifierException, NxtException {
         long accountId = (accountIdRs!=null ? Utils.parseAccountRsId(accountIdRs) : 0);
-        return getAccountLedger(accountId, firstIndex, lastIndex, holdingType, holdingId);
+        return getAccountLedger(accountId, firstIndex, lastIndex, holdingType, holdingId, includeTransactions);
     }
 
     /**
@@ -434,17 +435,19 @@ public class Nxt {
      * @param       holdingId               Ledger holding identifier or 0 to retrieve entries for any holding
      *                                      of the specified holding type.  The holding identifier is ignored
      *                                      if the holding type is not specified.
+     * @param       includeTransactions     TRUE to include the associated transactions
      * @return                              Account ledger entries
      * @throws      IdentifierException     Invalid identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static List<LedgerEntry> getAccountLedger(long accountId, int firstIndex, int lastIndex,
-                                            LedgerHolding holdingType, long holdingId)
+                                            LedgerHolding holdingType, long holdingId, boolean includeTransactions)
                                             throws IdentifierException, NxtException {
         int start = Math.max(firstIndex, 0);
         int stop = Math.max(lastIndex, start);
         StringBuilder sb = new StringBuilder(128);
-        sb.append(String.format("firstIndex=%d&lastIndex=%d", start, stop));
+        sb.append(String.format("firstIndex=%d&lastIndex=%d&includeTransactions=%s",
+                                start, stop, includeTransactions));
         if (accountId != 0)
             sb.append("&account=").append(Utils.idToString(accountId));
         if (holdingType != null) {
@@ -465,13 +468,16 @@ public class Nxt {
      * Get an account ledger entry
      *
      * @param       ledgerId                Ledger identifier
+     * @param       includeTransaction      TRUE to include the associated transaction
      * @return                              Account ledger entry
      * @throws      IdentifierException     Invalid identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static LedgerEntry getAccountLedgerEntry(long ledgerId)
+    public static LedgerEntry getAccountLedgerEntry(long ledgerId, boolean includeTransaction)
                                             throws IdentifierException, NxtException {
-        PeerResponse response = issueRequest("getAccountLedgerEntry", "ledgerId="+Utils.idToString(ledgerId),
+        PeerResponse response = issueRequest("getAccountLedgerEntry",
+                                             "ledgerId="+Utils.idToString(ledgerId)
+                                                     +"&includeTransaction="+includeTransaction,
                                             nodeReadTimeout);
         return new LedgerEntry(response);
     }
