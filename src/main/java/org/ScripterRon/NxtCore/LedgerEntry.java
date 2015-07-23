@@ -52,6 +52,9 @@ public class LedgerEntry {
     /** Block height */
     private final int height;
 
+    /** Entry timestamp */
+    private final int timestamp;
+
     /** Associated transaction */
     private final Transaction transaction;
 
@@ -73,6 +76,7 @@ public class LedgerEntry {
         this.change = response.getLongString("change");
         this.balance = response.getLongString("balance");
         this.height = response.getInt("height");
+        this.timestamp = response.getInt("timestamp");
         String eventString = response.getString("eventType");
         if (!eventString.isEmpty()) {
             LedgerEvent enumType;
@@ -199,6 +203,15 @@ public class LedgerEntry {
      */
     public long getLedgerHoldingId() {
         return holdingId;
+    }
+
+    /**
+     * Return the ledger entry timestamp
+     *
+     * @return                          Timestamp
+     */
+    public int getTimestamp() {
+        return timestamp;
     }
 
     /**
