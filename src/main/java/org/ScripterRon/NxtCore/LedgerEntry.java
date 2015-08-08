@@ -86,7 +86,7 @@ public class LedgerEntry {
                 enumType = null;
             }
             this.eventType = enumType;
-            this.eventId = response.getId("eventId");
+            this.eventId = response.getId("event");
         } else {
             this.eventType = LedgerEvent.UNKNOWN;
             this.eventId = 0;
@@ -100,7 +100,7 @@ public class LedgerEntry {
                 enumType = LedgerHolding.UNKNOWN;
             }
             this.holdingType = enumType;
-            this.holdingId = response.getId("holdingId");
+            this.holdingId = response.getId("holding");
         } else {
             this.holdingType = null;
             this.holdingId = 0;
