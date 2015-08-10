@@ -414,15 +414,16 @@ public class Nxt {
      *                                      of the specified holding type.  The holding identifier is ignored
      *                                      if the holding type is not specified.
      * @param       includeTransactions     TRUE to include the associated transactions
+     * @param       adminPW                 Administrator password or null if no password supplied
      * @return                              Account ledger entries
      * @throws      IdentifierException     Invalid identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static List<LedgerEntry> getAccountLedger(String accountIdRs, int firstIndex, int lastIndex,
-                                            LedgerHolding holdingType, long holdingId, boolean includeTransactions)
-                                            throws IdentifierException, NxtException {
+                                            LedgerHolding holdingType, long holdingId, boolean includeTransactions,
+                                            String adminPW) throws IdentifierException, NxtException {
         long accountId = (accountIdRs!=null ? Utils.parseAccountRsId(accountIdRs) : 0);
-        return getAccountLedger(accountId, firstIndex, lastIndex, holdingType, holdingId, includeTransactions);
+        return getAccountLedger(accountId, firstIndex, lastIndex, holdingType, holdingId, includeTransactions, adminPW);
     }
 
     /**
@@ -436,13 +437,14 @@ public class Nxt {
      *                                      of the specified holding type.  The holding identifier is ignored
      *                                      if the holding type is not specified.
      * @param       includeTransactions     TRUE to include the associated transactions
+     * @param       adminPW                 Administrator password or null if no password supplied
      * @return                              Account ledger entries
      * @throws      IdentifierException     Invalid identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static List<LedgerEntry> getAccountLedger(long accountId, int firstIndex, int lastIndex,
-                                            LedgerHolding holdingType, long holdingId, boolean includeTransactions)
-                                            throws IdentifierException, NxtException {
+                                            LedgerHolding holdingType, long holdingId, boolean includeTransactions,
+                                            String adminPW) throws IdentifierException, NxtException {
         int start = Math.max(firstIndex, 0);
         int stop = Math.max(lastIndex, start);
         StringBuilder sb = new StringBuilder(128);
@@ -455,6 +457,8 @@ public class Nxt {
             if (holdingId != 0)
                 sb.append("&holdingId=").append(Long.toUnsignedString(holdingId));
         }
+        if (adminPW != null)
+            sb.append("&adminPassword=").append(adminPW);
         PeerResponse response = issueRequest("getAccountLedger", sb.toString(), nodeReadTimeout);
         List<Map<String, Object>> entryList = response.getObjectList("entries");
         List<LedgerEntry> entries = new ArrayList<>(Math.max(entryList.size(), 1));
