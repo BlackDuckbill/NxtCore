@@ -25,6 +25,7 @@ public enum LedgerEvent {
     // Block and Transaction
         BLOCK_GENERATED(1, false),
         REJECT_PHASED_TRANSACTION(2, true),
+        TRANSACTION_FEE(50, true),
     // TYPE_PAYMENT
         ORDINARY_PAYMENT(3, true),
     // TYPE_MESSAGING
@@ -47,6 +48,7 @@ public enum LedgerEvent {
         ASSET_ISSUANCE(19, true),
         ASSET_TRADE(20, true),
         ASSET_TRANSFER(21, true),
+        ASSET_DELETE(49, true),
     // TYPE_DIGITAL_GOODS
         DIGITAL_GOODS_DELISTED(22, true),
         DIGITAL_GOODS_DELISTING(23, true),
