@@ -371,6 +371,30 @@ public class Nxt {
     }
 
     /**
+     * Get the account block count (blocks forged by the account)
+     *
+     * @param       accountIdRs             RS-encoded account identifier
+     * @return                              Block count
+     * @throws      IdentifierException     Invalid account identifier
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static int getAccountBlockCount(String accountIdRs) throws IdentifierException, NxtException {
+        return getAccountBlockCount(Utils.parseAccountRsId(accountIdRs));
+    }
+
+    /**
+     * Get the account block count (blocks forged by the account)
+     *
+     * @param       accountId               Account identifier
+     * @return                              Block count
+     * @throws      NxtException            Unable to issue Nxt API request
+     */
+    public static int getAccountBlockCount(long accountId) throws NxtException {
+        PeerResponse response = issueRequest("getAccountBlockCount", "account="+Utils.idToString(accountId), nodeReadTimeout);
+        return response.getInt("numberOfBlocks");
+    }
+
+    /**
      * Get the account block identifiers (blocks forged by the account)
      *
      * @param       accountIdRs             RS-encoded account identifier
@@ -378,8 +402,7 @@ public class Nxt {
      * @throws      IdentifierException     Invalid account identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<Long> getAccountBlocks(String accountIdRs)
-                                            throws IdentifierException, NxtException {
+    public static List<Long> getAccountBlocks(String accountIdRs) throws IdentifierException, NxtException {
         return getAccountBlocks(Utils.parseAccountRsId(accountIdRs));
     }
 
@@ -517,39 +540,6 @@ public class Nxt {
             throw new NxtException("Invalid public key returned for 'getAccountPublicKey'", exc);
         }
         return publicKey;
-    }
-
-    /**
-     * Get the account transaction identifiers (confirmed and unconfirmed)
-     *
-     * @param       accountIdRs             RS-encoded account identifier
-     * @return                              List of account transactions
-     * @throws      IdentifierException     Invalid account identifier
-     * @throws      NxtException            Unable to issue Nxt API request
-     */
-    public static List<Long> getAccountTransactions(String accountIdRs)
-                                            throws IdentifierException, NxtException {
-        return getAccountTransactions(Utils.parseAccountRsId(accountIdRs));
-    }
-
-    /**
-     * Get the account transaction identifiers (confirmed and unconfirmed)
-     *
-     * @param       accountId               Account identifier
-     * @return                              List of account transactions
-     * @throws      NxtException            Unable to issue Nxt API request
-     */
-    public static List<Long> getAccountTransactions(long accountId) throws NxtException {
-        List<Long> txList;
-        List<Long> confList = getConfirmedAccountTransactions(accountId);
-        List<Long> unconfList = getUnconfirmedAccountTransactions(accountId);
-        int size = confList.size() + unconfList.size();
-        if (size == 0)
-            return confList;
-        txList = new ArrayList<>(confList.size()+unconfList.size());
-        txList.addAll(confList);
-        txList.addAll(unconfList);
-        return txList;
     }
 
     /**
@@ -777,34 +767,43 @@ public class Nxt {
     }
 
     /**
-     * Get the confirmed account transaction identifiers
+     * Get the confirmed account transactions
      *
      * @param       accountIdRs             RS-encoded account identifier
-     * @return                              List of transaction identifiers
+     * @param       firstIndex              Start index (0 is the most recent transaction)
+     * @param       lastIndex               Last index
+     * @return                              Transaction list
      * @throws      IdentifierException     Invalid account identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<Long> getConfirmedAccountTransactions(String accountIdRs)
+    public static List<Transaction> getConfirmedAccountTransactions(String accountIdRs, int firstIndex, int lastIndex)
                                             throws IdentifierException, NxtException {
-        return getConfirmedAccountTransactions(Utils.parseAccountRsId(accountIdRs));
+        return getConfirmedAccountTransactions(Utils.parseAccountRsId(accountIdRs), firstIndex, lastIndex);
     }
 
     /**
-     * Get the confirmed account transaction identifiers
+     * Get the confirmed account transactions
      *
      * @param       accountId               Account identifier
-     * @return                              List of transaction identifiers
+     * @param       firstIndex              Start index (0 is the most recent transaction)
+     * @param       lastIndex               Last index
+     * @return                              Transaction list
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<Long> getConfirmedAccountTransactions(long accountId) throws NxtException {
-        List<Long> txList;
+    public static List<Transaction> getConfirmedAccountTransactions(long accountId, int firstIndex, int lastIndex) throws NxtException {
+        List<Transaction> txList;
         try {
-            PeerResponse response = issueRequest("getAccountTransactionIds", "account="+Utils.idToString(accountId),
-                                            nodeReadTimeout);
-            txList = response.getIdList("transactionIds");
-        } catch (IdentifierException exc) {
-            log.error("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
-            throw new NxtException("Invalid transaction identifier returned for 'getAccountTransactionIds'", exc);
+            PeerResponse response = issueRequest("getBlockchainTransactions",
+                    String.format("account=%s&firstIndex=%d&lastIndex=%d", Utils.idToString(accountId), firstIndex, lastIndex),
+                    nodeReadTimeout);
+            List<Map<String, Object>> objects = response.getObjectList("transactions");
+            txList = new ArrayList<>(objects.size());
+            for (Map<String, Object> object : objects) {
+                txList.add(new Transaction(new PeerResponse(object)));
+            }
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Unable to create transaction from peer response", exc);
+            throw new NxtException("Unable to create transaction from peer response", exc);
         }
         return txList;
     }
@@ -1117,35 +1116,38 @@ public class Nxt {
     }
 
     /**
-     * Get the unconfirmed account transaction identifiers
+     * Get the unconfirmed account transactions
      *
      * @param       accountIdRs             RS-encoded account identifier
-     * @return                              List of transaction identifiers
+     * @return                              Transaction list
      * @throws      IdentifierException     Invalid account identifier
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<Long> getUnconfirmedAccountTransactions(String accountIdRs)
+    public static List<Transaction> getUnconfirmedAccountTransactions(String accountIdRs)
                                             throws IdentifierException, NxtException {
         return getUnconfirmedAccountTransactions(Utils.parseAccountRsId(accountIdRs));
     }
 
     /**
-     * Get the unconfirmed account transaction identifiers
+     * Get the unconfirmed account transactions
      *
      * @param       accountId               Account identifier
-     * @return                              List of transaction identifiers
+     * @return                              Transaction list
      * @throws      NxtException            Unable to issue Nxt API request
      */
-    public static List<Long> getUnconfirmedAccountTransactions(long accountId) throws NxtException {
-        List<Long> txList;
+    public static List<Transaction> getUnconfirmedAccountTransactions(long accountId) throws NxtException {
+        List<Transaction> txList;
         try {
-            PeerResponse response = issueRequest("getUnconfirmedTransactionIds",
-                                            "account="+Utils.idToString(accountId),
-                                            nodeReadTimeout);
-            txList = response.getIdList("unconfirmedTransactionIds");
-        } catch (IdentifierException exc) {
-            log.error("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
-            throw new NxtException("Invalid transaction identifier returned for 'getUnconfirmedTransactionIds'", exc);
+            PeerResponse response = issueRequest("getUnconfirmedTransactions",
+                    "account="+Utils.idToString(accountId), nodeReadTimeout);
+            List<Map<String, Object>> objects = response.getObjectList("unconfirmedTransactions");
+            txList = new ArrayList<>(objects.size());
+            for (Map<String, Object> object : objects) {
+                txList.add(new Transaction(new PeerResponse(object)));
+            }
+        } catch (IdentifierException | NumberFormatException exc) {
+            log.error("Unable to create transaction from peer response", exc);
+            throw new NxtException("Unable to create transaction from peer response", exc);
         }
         return txList;
     }
