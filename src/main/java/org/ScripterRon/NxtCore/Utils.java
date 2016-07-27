@@ -118,19 +118,24 @@ public class Utils {
      * @throws      NumberFormatException   String contains an invalid hex character
      */
     public static byte[] parseHexString(String hex) throws NumberFormatException {
-        if ((hex.length()&0x01) == 1)
-            throw new NumberFormatException("Hex string length is not a multiple of 2");
-        byte[] bytes = new byte[hex.length() / 2];
-        for (int i = 0; i < bytes.length; i++) {
-            int char1 = hex.charAt(i * 2);
-            char1 = char1 > 0x60 ? char1 - 0x57 : char1 - 0x30;
-            int char2 = hex.charAt(i * 2 + 1);
-            char2 = char2 > 0x60 ? char2 - 0x57 : char2 - 0x30;
-            if (char1 < 0 || char2 < 0 || char1 > 15 || char2 > 15)
-                throw new NumberFormatException("Invalid hex number: " + hex);
-            bytes[i] = (byte)((char1 << 4) + char2);
+        try {
+            if ((hex.length()&0x01) == 1)
+                throw new NumberFormatException("Hex string length is not a multiple of 2");
+            byte[] bytes = new byte[hex.length() / 2];
+            for (int i = 0; i < bytes.length; i++) {
+                int char1 = hex.charAt(i * 2);
+                char1 = char1 > 0x60 ? char1 - 0x57 : char1 - 0x30;
+                int char2 = hex.charAt(i * 2 + 1);
+                char2 = char2 > 0x60 ? char2 - 0x57 : char2 - 0x30;
+                if (char1 < 0 || char2 < 0 || char1 > 15 || char2 > 15)
+                    throw new NumberFormatException("Invalid hex number: " + hex);
+                bytes[i] = (byte)((char1 << 4) + char2);
+            }
+            return bytes;
+        } catch (Exception exc) {
+            Nxt.log.debug("Invalid hex string: " + hex);
+            throw exc;
         }
-        return bytes;
     }
 
     /**
