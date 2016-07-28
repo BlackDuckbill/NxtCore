@@ -207,7 +207,7 @@ public class PeerResponse {
      */
     public byte[] getHexString(String key) {
         Object value = get(key);
-        return (value!=null && (value instanceof String) ? Utils.parseHexString((String)value) : null);
+        return (value!=null && (value instanceof String) ? Utils.parseHexString(((String)value).trim()) : null);
     }
 
     /**

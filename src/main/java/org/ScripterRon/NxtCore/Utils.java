@@ -133,7 +133,7 @@ public class Utils {
             }
             return bytes;
         } catch (Exception exc) {
-            Nxt.log.debug("Invalid hex string: " + hex);
+            Nxt.log.debug("Invalid hex string: '" + hex + "'");
             throw exc;
         }
     }
