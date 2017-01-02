@@ -875,7 +875,7 @@ public class Nxt {
      * Get the server forging status
      *
      * @param       adminPW                 Administrator password
-     * @return                              List of log messages
+     * @return                              List of generators
      * @throws      NxtException            Unable to issue Nxt API request
      */
     public static List<Generator> getForging(String adminPW) throws NxtException {
@@ -1050,7 +1050,7 @@ public class Nxt {
      * Get the current peer information
      *
      * @param       active                  TRUE to return just the peers in the active list
-     *                                      (CONNECTED or DISCONNECTED0 or FALSE to return all peers
+     *                                      (CONNECTED or DISCONNECTED) or FALSE to return all peers
      * @param       state                   Return peers in this state.  The state will be ignored
      *                                      if active peers are requested (active=true)
      * @return                              Peer list
